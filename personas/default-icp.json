@@ -1,0 +1,11 @@
+{
+  "name": "Default ICP",
+  "description": "Standard Ideal Customer Profile with broad criteria, matching the default scoring model.",
+  "weights": { "education": 0.2, "experience": 0.35, "thinking": 0.4 },
+  "education": { "preferred_tiers": ["tier_1", "tier_2"] },
+  "experience": {
+    "roles_must_include": [],
+    "preferred_companies_tiers": ["tier_1", "tier_2"]
+  },
+  "skills_must_have": []
+}

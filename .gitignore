@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+public/css/app.css
+
+# Secrets (SEC-02)
+.env
+.env.local
+
+# Runtime data (keep sample data tracked explicitly)
+logs/*
+input/*
+output/*
+data/sessions/*
+!**/.gitkeep
+!**/*.sample.json
+
+# OS / editor
+.DS_Store
+*.log
+coverage/
+.playwright/
+test-results/
+playwright-report/
+demo-output/

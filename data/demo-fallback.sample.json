@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Asha Verma",
+    "education": ["MBA @ IIM Ahmedabad, India"],
+    "jobs": ["VP Product @ Razorpay", "Product Manager @ Flipkart"],
+    "skills": ["Strategy", "AI", "Leadership"],
+    "company_details": { "name": "Razorpay", "category": "Fintech" }
+  },
+  {
+    "name": "Tom Baker",
+    "education": ["BS Computer Science @ Local State College"],
+    "jobs": ["Software Engineer @ Unknown Startup"],
+    "skills": ["JavaScript"],
+    "company_details": { "name": "Unknown Startup", "category": "SaaS" }
+  }
+]
