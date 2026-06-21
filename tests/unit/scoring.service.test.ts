@@ -71,6 +71,21 @@ describe('EducationService (F-03)', () => {
     const service = new EducationService(defaultConfig, silentLogger, fakeLlm());
     expect(await service.extract(['Harvard University'])).toMatchObject({ tier: 'tier_1' });
   });
+
+  it('should match a configured tier_3 university list', async () => {
+    const config = {
+      ...defaultConfig,
+      tiers: {
+        ...defaultConfig.tiers,
+        universities: { ...defaultConfig.tiers.universities, tier_3: ['Community College'] },
+      },
+    };
+    const service = new EducationService(config, silentLogger, new NullProvider());
+    expect(await service.extract(['Community College'])).toMatchObject({
+      tier: 'tier_3',
+      score: 40,
+    });
+  });
 });
 
 describe('ExperienceService (F-04)', () => {
@@ -101,6 +116,25 @@ describe('ExperienceService (F-04)', () => {
     const service = new ExperienceService(defaultConfig, silentLogger, tierLlm('tier_2'));
     const signal = await service.extract(['a @ Foo', 'b @ Bar']);
     expect(signal).toMatchObject({ tier1Count: 0, tier2Count: 2, score: 70 });
+  });
+
+  it('should fall back to rules when company LLM classification fails', async () => {
+    const service = new ExperienceService(defaultConfig, silentLogger, fakeLlm()); // available, classify fails
+    const signal = await service.extract(['x @ Razorpay']); // Razorpay is tier_1 in config
+    expect(signal).toMatchObject({ tier1Count: 1 });
+  });
+
+  it('should match a configured tier_3 company list', async () => {
+    const config = {
+      ...defaultConfig,
+      tiers: {
+        ...defaultConfig.tiers,
+        companies: { ...defaultConfig.tiers.companies, tier_3: ['Tiny LLC'] },
+      },
+    };
+    const service = new ExperienceService(config, silentLogger, new NullProvider());
+    const signal = await service.extract(['x @ Tiny LLC']);
+    expect(signal.companies[0].tier).toBe('tier_3');
   });
 });
 

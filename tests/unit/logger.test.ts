@@ -57,6 +57,20 @@ describe('logger', () => {
     expect(result).toBe('/var/logs/icp-profiler-2026-06-21.log');
   });
 
+  it('should default the log file date to now when omitted', () => {
+    expect(logFilePath('/var/logs')).toMatch(/\/var\/logs\/icp-profiler-\d{4}-\d{2}-\d{2}\.log/);
+  });
+
+  it('should default the level to info when neither option nor env is set', () => {
+    const previous = process.env.LOG_LEVEL;
+    delete process.env.LOG_LEVEL;
+    try {
+      expect(createLogger().level).toBe('info');
+    } finally {
+      if (previous !== undefined) process.env.LOG_LEVEL = previous;
+    }
+  });
+
   it('should return a usable stdout logger by default and honour LOG_LEVEL', () => {
     // Arrange
     const previous = process.env.LOG_LEVEL;

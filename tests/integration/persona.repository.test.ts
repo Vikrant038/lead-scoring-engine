@@ -40,6 +40,10 @@ describe('PersonaRepository (integration)', () => {
     expect(() => repo.get('nope')).toThrow(NotFoundError);
   });
 
+  it('should throw NotFound when deleting a missing persona', () => {
+    expect(() => repo.delete('ghost')).toThrow(NotFoundError);
+  });
+
   it('should list valid personas and skip invalid files', () => {
     repo.save('cto', validPersona);
     fs.writeFileSync(path.join(dir, 'broken.json'), '{ invalid');

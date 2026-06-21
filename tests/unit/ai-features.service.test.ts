@@ -150,6 +150,22 @@ describe('OutreachEmailService (F-14)', () => {
     expect(captured?.tone).toContain('light touch'); // LOW bucket mapping
   });
 
+  it('should yield an empty role when the lead has no jobs', async () => {
+    let captured: EmailInput | undefined;
+    const llm = fakeLlm({
+      generateEmail: async (input) => {
+        captured = input;
+        return { success: true, data: { subject: 'S', body: 'B' } };
+      },
+    });
+    await new OutreachEmailService(llm, silentLogger).generate(
+      { name: 'NoJobs' },
+      result('HIGH'),
+      undefined,
+    );
+    expect(captured?.role).toBe('');
+  });
+
   it('should return null when generation fails', async () => {
     const service = new OutreachEmailService(fakeLlm(), silentLogger); // generateEmail -> failure
     expect(await service.generate(profile, result('HIGH'), undefined)).toBeNull();

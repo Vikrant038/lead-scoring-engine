@@ -63,6 +63,12 @@ describe('ConfigService', () => {
     expect(() => service.update(bad)).toThrow(/buckets/);
   });
 
+  it('should report a root-level error when the config is not an object', () => {
+    const service = new ConfigService();
+    expect(() => service.update(null)).toThrow(InvalidConfigError);
+    expect(() => service.update(null)).toThrow(/<root>/);
+  });
+
   it('should restore defaults via reset (FR-11-005)', () => {
     // Arrange
     const service = new ConfigService();

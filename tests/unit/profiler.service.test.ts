@@ -14,7 +14,7 @@ import {
 } from '../../src/modules/profiler.service';
 import { NullProvider } from '../../src/llm/null.provider';
 import { createProfiler } from '../../src/batch/run-batch';
-import { silentLogger } from '../helpers/test-deps';
+import { fakeLlm, silentLogger } from '../helpers/test-deps';
 
 const input = (overrides: Partial<InputProfile> = {}): InputProfile => ({
   _recordId: 'r1',
@@ -78,6 +78,20 @@ describe('ProfilerService', () => {
     expect(excluded.bucket).toBe('NOT FIT');
     expect(excluded.explanation).toBe('A solid lead.'); // explanation still runs
     expect(excluded.outreach_email).toBeUndefined(); // email skipped
+  });
+
+  it('should skip AI post-processing when the feature flags are disabled', async () => {
+    const config = {
+      ...defaultConfig,
+      features: { enableScoreExplanation: false, enableEmailGeneration: false },
+    };
+    const aiLlm = fakeLlm({
+      generateExplanation: async () => ({ success: true, data: 'x' }),
+      generateEmail: async () => ({ success: true, data: { subject: 's', body: 'b' } }),
+    });
+    const result = await createProfiler(config, silentLogger, aiLlm).profile(strong);
+    expect(result.explanation).toBeUndefined();
+    expect(result.outreach_email).toBeUndefined();
   });
 
   it('should return an ERROR result when a pipeline stage throws', async () => {

@@ -5,10 +5,12 @@
  */
 import { Writable } from 'node:stream';
 import { createLogger } from '../../src/lib/logger/logger';
+import { BaseLlmProvider } from '../../src/llm/base.provider';
 import { GeminiProvider } from '../../src/llm/gemini.provider';
 import { OpenAIProvider } from '../../src/llm/openai.provider';
 import { NullProvider } from '../../src/llm/null.provider';
 import { createLlmClient } from '../../src/llm/llm-client.factory';
+import type { LlmResult } from '../../src/llm/llm-client.interface';
 
 const logger = createLogger({ level: 'error' }, new Writable({ write: (_c, _e, cb) => cb() }));
 const realFetch = global.fetch;
@@ -89,6 +91,50 @@ describe('createLlmClient factory', () => {
 
   it('should fall back to NullProvider when openai is selected without a key', () => {
     expect(createLlmClient({ AI_PROVIDER: 'openai' }, 5000, logger)).toBeInstanceOf(NullProvider);
+  });
+
+  it('should default AI_PROVIDER to none when unset', () => {
+    expect(createLlmClient({}, 5000, logger).available).toBe(false);
+  });
+});
+
+class FailingProvider extends BaseLlmProvider {
+  protected request(): Promise<LlmResult<string>> {
+    return Promise.resolve({ success: false }); // no error message -> exercises "no response" fallbacks
+  }
+}
+
+describe('BaseLlmProvider failure fallbacks', () => {
+  const provider = new FailingProvider('k', 'm', 5000, logger);
+
+  it('should report failure with no error from every method', async () => {
+    const results = await Promise.all([
+      provider.classifyUniversity('X'),
+      provider.generateExplanation({
+        name: 'X',
+        education: [],
+        companies: [],
+        skills: [],
+        componentScores: { education: 0, experience: 0, thinking: 0, recencyBonus: 0 },
+        finalScore: 0,
+        bucket: 'NOT FIT',
+        priority: '',
+      }),
+      provider.generateEmail({
+        name: 'X',
+        education: '',
+        company: '',
+        role: '',
+        skills: [],
+        icpScore: 0,
+        bucket: 'NOT FIT',
+        tone: 'pro',
+        senderName: 'A',
+        senderCompany: 'B',
+      }),
+      provider.generateProfiles({ count: 1 }),
+    ]);
+    expect(results.every((result) => result.success === false)).toBe(true);
   });
 });
 

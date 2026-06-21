@@ -69,6 +69,7 @@ export function createLogger(options: LoggerOptions = {}, destination?: Destinat
     return pino(baseOptions(level), destination);
   }
 
+  /* istanbul ignore next -- dev-only pretty transport spawns a worker thread */
   if (options.pretty) {
     return pino({ ...baseOptions(level), transport: { target: 'pino-pretty' } });
   }

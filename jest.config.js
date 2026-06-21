@@ -3,10 +3,18 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.types.ts', '!src/web/views/**'],
+  // Exclude type-only files, EJS views, and not-yet-implemented layers (re-added in their units).
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.types.ts',
+    '!src/web/**',
+    '!demo.ts',
+  ],
   coverageThreshold: {
-    // Commercial tier (CODING 7.1): services 80%, utilities 90%.
-    global: { branches: 70, functions: 80, lines: 80, statements: 80 },
+    global: { branches: 80, functions: 90, lines: 90, statements: 90 },
+    // Per-file floor: every individual source file must clear this bar (not just the aggregate).
+    // Branches sit at 75 to allow genuinely-unreachable defensive guards; lines/funcs/stmts at 90.
+    'src/**/*.ts': { branches: 80, functions: 90, lines: 90, statements: 90 },
   },
   projects: [
     {
