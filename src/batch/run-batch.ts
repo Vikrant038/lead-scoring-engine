@@ -15,6 +15,8 @@ import { ExperienceService } from '../modules/experience.service';
 import { ThinkingQualityService } from '../modules/thinking-quality.service';
 import { ScorerService } from '../modules/scorer.service';
 import { PersonaMatcherService } from '../modules/persona-matcher.service';
+import { ExplanationService } from '../modules/explanation.service';
+import { OutreachEmailService } from '../modules/outreach-email.service';
 import {
   ProfilerService,
   type EmailGenerator,
@@ -41,8 +43,10 @@ export function createProfiler(
     thinking: new ThinkingQualityService(config, logger),
     scorer: new ScorerService(config, logger),
     personaMatcher: new PersonaMatcherService(config, logger),
-    explanation: extras.explanation,
-    email: extras.email,
+    // Auto-wire the AI post-processors; they self-degrade to null when the LLM is unavailable
+    // (FR-13-005/FR-14), so callers get AI for free when a key is configured.
+    explanation: extras.explanation ?? new ExplanationService(llm, logger),
+    email: extras.email ?? new OutreachEmailService(llm, logger),
   });
 }
 
