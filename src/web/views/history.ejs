@@ -4,7 +4,20 @@
   <body class="bg-gray-50 text-gray-900">
     <%- include('partials/nav') %>
     <main class="max-w-5xl mx-auto p-6">
-      <h1 class="text-2xl font-semibold mb-4">Processing history</h1>
+      <div class="flex items-center justify-between mb-4">
+        <h1 class="text-2xl font-semibold">Processing history</h1>
+        <div class="flex gap-3">
+          <a href="/api/export-emails" class="px-3 py-2 rounded border border-gray-300 bg-white text-sm">Export emails (TXT)</a>
+          <button id="clear-data" class="px-3 py-2 rounded border border-red-300 text-red-600 bg-white text-sm">Clear my data</button>
+        </div>
+      </div>
+
+      <% if (emailIsDefault) { %>
+      <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-3 mb-4">
+        Email settings not configured — drafts use defaults.
+        <a href="/email-settings" class="underline">Configure now</a>.
+      </p>
+      <% } %>
 
       <div class="mb-4 text-sm text-gray-600">
         Total: <strong><%= summary.total %></strong> · Avg score:
@@ -24,7 +37,7 @@
             <th class="p-3">ICP</th>
             <th class="p-3">Bucket</th>
             <th class="p-3">Persona fit</th>
-            <th class="p-3">Action</th>
+            <th class="p-3">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -35,14 +48,29 @@
             <td class="p-3"><%= r.icp_score == null ? '—' : r.icp_score %></td>
             <td class="p-3"><%= r.bucket || r.status %></td>
             <td class="p-3"><%= r.persona_fit ? r.persona_fit.fit_score : '—' %></td>
-            <td class="p-3">
+            <td class="p-3 flex gap-3">
               <a class="underline" style="color: #0029ff" href="/api/download/<%= encodeURIComponent(r._recordId) %>">Download</a>
+              <% if (r.bucket && r.bucket !== 'NOT FIT') { %>
+              <button class="regenerate-email underline" style="color: #0029ff" data-id="<%= r._recordId %>">📧 Email</button>
+              <% } %>
             </td>
           </tr>
+          <% if (r.bucket && r.bucket !== 'NOT FIT') { %>
+          <tr class="email-panel hidden bg-gray-50" data-id="<%= r._recordId %>">
+            <td colspan="6" class="p-3">
+              <div class="text-sm">
+                <p class="mb-1"><strong>Subject:</strong> <span class="email-subject"></span></p>
+                <pre class="email-body whitespace-pre-wrap font-sans bg-white border border-gray-200 rounded p-2"></pre>
+                <button class="copy-email underline mt-2" style="color: #0029ff" data-id="<%= r._recordId %>">Copy to clipboard</button>
+              </div>
+            </td>
+          </tr>
+          <% } %>
           <% }); %>
         </tbody>
       </table>
       <% } %>
     </main>
+    <script src="/js/history.js"></script>
   </body>
 </html>

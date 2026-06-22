@@ -14,14 +14,16 @@ export function createJobProcessor(ctx: WebContext): JobProcessor {
 
     const dirs = ctx.sessionStore.ensure(job.sessionId);
     const fileHandler = new FileHandlerRepository(dirs, ctx.logger);
-    const profiler = createProfiler(ctx.config, ctx.logger, ctx.llm);
+    const profiler = createProfiler(ctx.configService.get(), ctx.logger, ctx.llm);
     const persona = resolvePersona(ctx, job.personaId);
-    const emailSettings = ctx.emailSettingsFor?.(job.sessionId);
 
     const profiles = fileHandler.readSingleFile(job.fileName);
     for (let index = 0; index < profiles.length; index += 1) {
       job.progress = Math.round((index / profiles.length) * 100);
-      const result = await profiler.profile(profiles[index], { persona, emailSettings });
+      const result = await profiler.profile(profiles[index], {
+        persona,
+        emailSettings: job.emailSettings,
+      });
       fileHandler.writeProfileResult(result);
       job.logs.push(`✓ ${result.profile_name}: ${result.icp_score ?? result.status}`);
     }

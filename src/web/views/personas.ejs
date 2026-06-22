@@ -1,4 +1,60 @@
-<% /* TODO(Phase 3): personas view */ %>
 <!doctype html>
-<html><head><title>personas</title><link rel="stylesheet" href="/css/app.css"></head>
-<body class="bg-gray-50"><h1 class="text-primary">personas — scaffold</h1></body></html>
+<html lang="en">
+  <head><%- include('partials/head') %></head>
+  <body class="bg-gray-50 text-gray-900" data-selected-persona="<%= selectedPersona %>">
+    <%- include('partials/nav') %>
+    <main class="max-w-4xl mx-auto p-6">
+      <h1 class="text-2xl font-semibold mb-4">Personas</h1>
+
+      <section class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+        <h2 class="text-lg font-medium mb-2">Upload a persona</h2>
+        <div class="flex items-center gap-3">
+          <input id="persona-file" type="file" accept="application/json,.json" />
+          <button id="upload-btn" class="px-4 py-2 rounded text-white" style="background-color: #0029ff">
+            Upload
+          </button>
+        </div>
+        <p id="upload-status" class="text-sm mt-2" role="status"></p>
+      </section>
+
+      <% if (personas.length === 0) { %>
+      <p class="text-gray-500">No personas yet. Upload one above.</p>
+      <% } else { %>
+      <table class="w-full bg-white rounded-lg overflow-hidden text-sm">
+        <thead class="bg-gray-100 text-left">
+          <tr>
+            <th class="p-3">Active</th>
+            <th class="p-3">Name</th>
+            <th class="p-3">Description</th>
+            <th class="p-3">Last modified</th>
+            <th class="p-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% personas.forEach(function (p) { %>
+          <tr class="border-t border-gray-100" data-persona-id="<%= p.id %>">
+            <td class="p-3">
+              <input
+                type="radio"
+                name="active-persona"
+                class="set-persona"
+                value="<%= p.id %>"
+                <%= p.id === selectedPersona ? 'checked' : '' %>
+              />
+            </td>
+            <td class="p-3"><%= p.name %></td>
+            <td class="p-3 text-gray-600"><%= p.description %></td>
+            <td class="p-3 text-gray-500"><%= p.lastModified %></td>
+            <td class="p-3 flex gap-3">
+              <a class="underline" style="color: #0029ff" href="/personas/<%= encodeURIComponent(p.id) %>/edit">Edit</a>
+              <button class="delete-persona underline text-red-600" data-id="<%= p.id %>">Delete</button>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      <% } %>
+    </main>
+    <script src="/js/personas.js"></script>
+  </body>
+</html>

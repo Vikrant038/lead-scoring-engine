@@ -37,6 +37,7 @@ export const historyController =
         csrfToken: res.locals.csrfToken,
         results,
         summary: summarise(results),
+        emailIsDefault: !req.session.emailSettings,
       });
     } catch (error) {
       next(error);

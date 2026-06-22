@@ -4,7 +4,9 @@ import path from 'node:path';
 import request from 'supertest';
 import type { Express } from 'express';
 import { defaultConfig } from '../../src/config/config';
+import { ConfigService } from '../../src/config/config.service';
 import { NullProvider } from '../../src/llm/null.provider';
+import { OutreachEmailService } from '../../src/modules/outreach-email.service';
 import { PersonaRepository } from '../../src/repositories/persona.repository';
 import { SessionStoreRepository } from '../../src/repositories/session-store.repository';
 import { QueueService } from '../../src/web/services/queue.service';
@@ -27,12 +29,14 @@ function buildTestApp(): { app: Express; root: string } {
   };
   const sessionStore = new SessionStoreRepository(path.join(root, 'sessions'), silentLogger);
   const personaRepo = new PersonaRepository(config.paths.personasDir, silentLogger);
+  const llm = new NullProvider();
   const ctx = {
-    config,
+    configService: new ConfigService(config),
     logger: silentLogger,
-    llm: new NullProvider(),
+    llm,
     sessionStore,
     personaRepo,
+    emailGenerator: new OutreachEmailService(llm, silentLogger),
   } as WebContext;
   ctx.queue = new QueueService(createJobProcessor(ctx), silentLogger);
   return { app: createApp(ctx, 'test-secret'), root };

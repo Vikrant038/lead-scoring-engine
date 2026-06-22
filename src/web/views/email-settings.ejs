@@ -1,4 +1,35 @@
-<% /* TODO(Phase 3): email-settings view */ %>
 <!doctype html>
-<html><head><title>email-settings</title><link rel="stylesheet" href="/css/app.css"></head>
-<body class="bg-gray-50"><h1 class="text-primary">email-settings — scaffold</h1></body></html>
+<html lang="en">
+  <head><%- include('partials/head') %></head>
+  <body class="bg-gray-50 text-gray-900">
+    <%- include('partials/nav') %>
+    <main class="max-w-xl mx-auto p-6">
+      <h1 class="text-2xl font-semibold mb-4">Email settings</h1>
+      <% if (isDefault) { %>
+      <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-3 mb-4">
+        Using default values — set yours below so outreach emails are personalised.
+      </p>
+      <% } %>
+
+      <form id="email-form" class="space-y-4">
+        <div>
+          <label for="senderName" class="block text-sm font-medium mb-1">Sender name</label>
+          <input id="senderName" name="senderName" class="w-full border border-gray-300 rounded p-2" value="<%= settings.senderName %>" required />
+        </div>
+        <div>
+          <label for="company" class="block text-sm font-medium mb-1">Company</label>
+          <input id="company" name="company" class="w-full border border-gray-300 rounded p-2" value="<%= settings.company %>" required />
+        </div>
+        <div>
+          <label for="tone" class="block text-sm font-medium mb-1">Default tone</label>
+          <input id="tone" name="tone" class="w-full border border-gray-300 rounded p-2" value="<%= settings.tone %>" required />
+        </div>
+        <div class="flex items-center gap-3">
+          <button type="submit" class="px-4 py-2 rounded text-white" style="background-color: #0029ff">Save</button>
+          <span id="status" class="text-sm" role="status"></span>
+        </div>
+      </form>
+    </main>
+    <script src="/js/email-settings.js"></script>
+  </body>
+</html>

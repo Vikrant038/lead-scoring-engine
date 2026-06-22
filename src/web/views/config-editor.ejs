@@ -1,4 +1,30 @@
-<% /* TODO(Phase 3): config-editor view */ %>
 <!doctype html>
-<html><head><title>config-editor</title><link rel="stylesheet" href="/css/app.css"></head>
-<body class="bg-gray-50"><h1 class="text-primary">config-editor — scaffold</h1></body></html>
+<html lang="en">
+  <head><%- include('partials/head') %></head>
+  <body class="bg-gray-50 text-gray-900">
+    <%- include('partials/nav') %>
+    <main class="max-w-3xl mx-auto p-6">
+      <h1 class="text-2xl font-semibold mb-4">Configuration</h1>
+      <p class="text-sm text-gray-600 mb-4">
+        Edit the runtime configuration as JSON. Saving applies it immediately to all scoring.
+      </p>
+
+      <textarea
+        id="config-json"
+        class="w-full h-96 font-mono text-sm border border-gray-300 rounded-lg p-3 bg-white"
+        spellcheck="false"
+      ><%= configJson %></textarea>
+
+      <div class="mt-4 flex items-center gap-3">
+        <button id="save-btn" class="px-4 py-2 rounded text-white" style="background-color: #0029ff">
+          Save
+        </button>
+        <button id="reset-btn" class="px-4 py-2 rounded border border-gray-300 bg-white">
+          Reset to Defaults
+        </button>
+        <span id="status" class="text-sm" role="status"></span>
+      </div>
+    </main>
+    <script src="/js/config.js"></script>
+  </body>
+</html>

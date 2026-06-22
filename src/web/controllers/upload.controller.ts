@@ -8,11 +8,13 @@ import type { UploadService } from '../services/upload.service';
 
 export const homeController =
   (ctx: WebContext): RequestHandler =>
-  (_req, res) => {
+  (req, res) => {
     res.render('index', {
       title: 'Upload',
       csrfToken: res.locals.csrfToken,
-      pollIntervalMs: ctx.config.processing.pollIntervalMs,
+      pollIntervalMs: ctx.configService.get().processing.pollIntervalMs,
+      personas: ctx.personaRepo.list(),
+      selectedPersona: req.session.selectedPersona ?? 'default-icp',
     });
   };
 
@@ -23,7 +25,12 @@ export const uploadController =
       if (!req.file) {
         throw new ValidationError('file', 'no file uploaded');
       }
-      const job = upload.accept(req.sessionID, req.file, req.session.selectedPersona);
+      const job = upload.accept(
+        req.sessionID,
+        req.file,
+        req.session.selectedPersona,
+        req.session.emailSettings,
+      );
       res.json({ success: true, jobId: job.id });
     } catch (error) {
       next(error);

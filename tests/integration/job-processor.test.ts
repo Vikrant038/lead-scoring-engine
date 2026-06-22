@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { defaultConfig } from '../../src/config/config';
+import { ConfigService } from '../../src/config/config.service';
 import { NullProvider } from '../../src/llm/null.provider';
 import { PersonaRepository } from '../../src/repositories/persona.repository';
 import { SessionStoreRepository } from '../../src/repositories/session-store.repository';
@@ -26,7 +27,7 @@ describe('createJobProcessor (integration)', () => {
     root = fs.mkdtempSync(path.join(os.tmpdir(), 'jp-'));
     sessionStore = new SessionStoreRepository(path.join(root, 'sessions'), silentLogger);
     ctx = {
-      config: defaultConfig,
+      configService: new ConfigService(defaultConfig),
       logger: silentLogger,
       llm: new NullProvider(),
       sessionStore,

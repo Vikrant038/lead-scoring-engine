@@ -35,6 +35,17 @@
     Array.prototype.forEach.call(files, upload);
   }
 
+  const personaSelect = document.getElementById('persona-select');
+  if (personaSelect) {
+    personaSelect.addEventListener('change', () => {
+      fetch('/api/set-persona', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+        body: JSON.stringify({ personaId: personaSelect.value }),
+      }).catch(() => {});
+    });
+  }
+
   dropzone.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
   dropzone.addEventListener('dragover', (e) => {

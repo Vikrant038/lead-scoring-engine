@@ -4,6 +4,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import { ValidationError } from '../../lib/errors/domain-errors';
+import type { EmailSettings } from '../../domain/result.types';
 import type { Logger } from '../../lib/logger/logger';
 
 export type JobStatus = 'queued' | 'processing' | 'completed' | 'error';
@@ -13,6 +14,8 @@ export interface Job {
   sessionId: string;
   fileName: string;
   personaId?: string;
+  /** Snapshot of the session's email settings taken at enqueue time (FR-14-009). */
+  emailSettings?: EmailSettings;
   status: JobStatus;
   progress: number;
   logs: string[];
@@ -24,6 +27,7 @@ export interface NewJob {
   sessionId: string;
   fileName: string;
   personaId?: string;
+  emailSettings?: EmailSettings;
 }
 
 export type JobProcessor = (job: Job) => Promise<void>;
@@ -48,6 +52,7 @@ export class QueueService {
       sessionId: newJob.sessionId,
       fileName: newJob.fileName,
       personaId: newJob.personaId,
+      emailSettings: newJob.emailSettings,
       status: 'queued',
       progress: 0,
       logs: [],
