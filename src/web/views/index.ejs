@@ -1,4 +1,27 @@
-<% /* TODO(Phase 3): index view */ %>
 <!doctype html>
-<html><head><title>index</title><link rel="stylesheet" href="/css/app.css"></head>
-<body class="bg-gray-50"><h1 class="text-primary">index — scaffold</h1></body></html>
+<html lang="en">
+  <head><%- include('partials/head') %></head>
+  <body class="bg-gray-50 text-gray-900" data-poll-interval="<%= pollIntervalMs %>">
+    <%- include('partials/nav') %>
+    <main class="max-w-3xl mx-auto p-6">
+      <h1 class="text-2xl font-semibold mb-4">Upload lead profiles</h1>
+
+      <div
+        id="dropzone"
+        class="border-2 border-dashed border-gray-300 rounded-lg p-10 text-center cursor-pointer bg-white"
+      >
+        <p class="text-gray-600">Drag &amp; drop a JSON file here, or click to browse.</p>
+        <input id="file-input" type="file" accept="application/json,.json" multiple class="hidden" />
+      </div>
+      <p id="upload-error" class="text-red-600 mt-2" role="alert"></p>
+
+      <section class="mt-8">
+        <h2 class="text-lg font-medium mb-2">Processing queue</h2>
+        <ul id="queue" class="space-y-2">
+          <li class="text-gray-500">No jobs yet.</li>
+        </ul>
+      </section>
+    </main>
+    <script src="/js/app.js"></script>
+  </body>
+</html>

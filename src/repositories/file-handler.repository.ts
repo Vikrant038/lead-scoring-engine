@@ -82,6 +82,22 @@ export class FileHandlerRepository {
     return profiles;
   }
 
+  /** Read and annotate the profiles from a single input file (used by the web job processor). */
+  readSingleFile(fileName: string): InputProfile[] {
+    const filePath = resolveWithin(this.paths.inputDir, fileName);
+    if (!fs.existsSync(filePath)) {
+      return [];
+    }
+    const stem = fileName.replace(/\.json$/i, '');
+    const data: unknown = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    if (Array.isArray(data)) {
+      return data.map((entry, index) =>
+        this.annotate(entry, this.recordIdFor(entry, `${stem}_${index}`), fileName),
+      );
+    }
+    return [this.annotate(data, this.recordIdFor(data, stem), fileName)];
+  }
+
   /** Write a single lead result to `{recordId}_result.json` (FR-07-001). */
   writeProfileResult(result: ProfileResult): void {
     const target = resolveWithin(this.paths.outputDir, resultFileName(result._recordId));

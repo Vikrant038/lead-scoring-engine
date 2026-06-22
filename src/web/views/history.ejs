@@ -1,4 +1,48 @@
-<% /* TODO(Phase 3): history view */ %>
 <!doctype html>
-<html><head><title>history</title><link rel="stylesheet" href="/css/app.css"></head>
-<body class="bg-gray-50"><h1 class="text-primary">history — scaffold</h1></body></html>
+<html lang="en">
+  <head><%- include('partials/head') %></head>
+  <body class="bg-gray-50 text-gray-900">
+    <%- include('partials/nav') %>
+    <main class="max-w-5xl mx-auto p-6">
+      <h1 class="text-2xl font-semibold mb-4">Processing history</h1>
+
+      <div class="mb-4 text-sm text-gray-600">
+        Total: <strong><%= summary.total %></strong> · Avg score:
+        <strong><%= summary.average %></strong> · HIGH: <%= summary.buckets.HIGH %> · MEDIUM:
+        <%= summary.buckets.MEDIUM %> · LOW: <%= summary.buckets.LOW %> · NOT FIT:
+        <%= summary.buckets['NOT FIT'] %>
+      </div>
+
+      <% if (results.length === 0) { %>
+      <p class="text-gray-500">No processed leads yet.</p>
+      <% } else { %>
+      <table class="w-full bg-white rounded-lg overflow-hidden text-sm">
+        <thead class="bg-gray-100 text-left">
+          <tr>
+            <th class="p-3">Name</th>
+            <th class="p-3">Record ID</th>
+            <th class="p-3">ICP</th>
+            <th class="p-3">Bucket</th>
+            <th class="p-3">Persona fit</th>
+            <th class="p-3">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% results.forEach(function (r) { %>
+          <tr class="border-t border-gray-100">
+            <td class="p-3"><%= r.profile_name %></td>
+            <td class="p-3 text-gray-500"><%= r._recordId %></td>
+            <td class="p-3"><%= r.icp_score == null ? '—' : r.icp_score %></td>
+            <td class="p-3"><%= r.bucket || r.status %></td>
+            <td class="p-3"><%= r.persona_fit ? r.persona_fit.fit_score : '—' %></td>
+            <td class="p-3">
+              <a class="underline" style="color: #0029ff" href="/api/download/<%= encodeURIComponent(r._recordId) %>">Download</a>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      <% } %>
+    </main>
+  </body>
+</html>
