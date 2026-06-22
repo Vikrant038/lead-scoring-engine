@@ -1,27 +1,67 @@
 # Lead Scoring Engine (ICP Profiler)
 
-A modular, multi-user system that automates qualification of prospect profiles. It ingests lead
-data as JSON, computes an **Ideal Customer Profile (ICP) score**, classifies leads into priority
-buckets, and (optionally) generates AI narratives, outreach emails, and persona-based fit
-assessments. Ships a **batch CLI**, a **multi-user web app**, and a **self-demo mode**.
+Sales teams drown in lead lists. A spreadsheet of 500 prospects is not a pipeline — it is 500
+unanswered questions: *Who is actually worth a call today? Who looks impressive but isn't a fit?
+Why is this person a 7 and that one a 3?* Answering those questions by hand is slow, inconsistent,
+and quietly biased by whoever happens to be reading the list that morning.
 
-> **Status:** Phase 2 scaffold. Feature logic is implemented unit-by-unit in Phase 3
-> (see [`PROJECT_PLAN.md`](./PROJECT_PLAN.md)).
+This project answers them in code. The **Lead Scoring Engine** ingests lead profiles as JSON,
+runs them through a transparent six-stage scoring pipeline, and returns an **Ideal Customer
+Profile (ICP) score** out of 100, a priority bucket, the component scores behind the number, and —
+when an AI key is present — a plain-English explanation, a persona-fit breakdown, and a drafted
+outreach email. Every number is explainable. Nothing is a black box.
+
+It ships three ways to use it: a **batch CLI** for scoring a folder of leads, a **multi-user web
+app** for drag-and-drop scoring with per-user isolation, and a **self-demo** that generates its own
+data so you can see the whole thing work in one command.
+
+> **Why it's built the way it is** — the design thinking, the trade-offs, and how the AI was
+> governed during the build — lives in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md). Start
+> there if you care about the *why*, not just the *what*.
+
+---
+
+## What it does
+
+- **Transparent scoring.** Six modules — Data Quality → Education → Experience → Thinking Quality →
+  Scorer → Profiler — each contribute a visible sub-score. The final ICP score is a weighted blend
+  (thinking 0.40, experience 0.35, education 0.20) plus a recency bonus, mapped to a bucket
+  (`HIGH / MEDIUM / LOW / NOT FIT`). You can always see *why* a lead scored what it did.
+- **AI that is strictly optional.** Score explanations, outreach emails, and tier classification
+  use Gemini or OpenAI when a key is configured, and **degrade gracefully to rule-based logic**
+  when it isn't. The system never falls over because an API key is missing or a model times out.
+- **Persona fit.** Define a persona (skills, roles, company tiers, education) and score leads
+  against it, with a gap analysis explaining what's missing.
+- **Multi-user web app.** Drag-and-drop JSON upload, an in-memory processing queue with live
+  progress, a history page with downloads, a config editor, persona management, and email settings —
+  each browser session isolated in its own on-disk silo. No database required.
+- **Self-demo.** `npm run demo` generates synthetic leads (via AI or a curated fallback set) and
+  runs the full pipeline, so the project demonstrates itself with zero manual data entry.
 
 ## Stack
 
-TypeScript (strict) · Express + EJS + Multer 2.x · Zod · pino · Tailwind · Gemini/OpenAI
-(graceful rule-based fallback) · Jest + Playwright + MSW · ESLint/Prettier/Husky/gitleaks.
+TypeScript (strict) · Express + EJS + Multer 2.x · Zod (single source of truth for types) ·
+pino (structured logging with PII redaction) · Tailwind · Gemini / OpenAI with rule-based fallback ·
+Jest (unit + integration, per-file coverage gate) · Playwright (E2E) · ESLint / Prettier / Husky /
+Gitleaks. No database; all state is JSON/CSV on the filesystem, partitioned per session.
 
 ## Quickstart
 
 ```bash
 npm install
-cp .env.example .env        # then fill in (AI keys optional; SESSION_SECRET for prod)
-npm run build               # tsc -> dist/
-npm start                   # batch CLI over ./input
-npm run dev:server          # web app at http://localhost:3000
-npm run demo                # self-demo (no manual data needed)
+cp .env.example .env          # AI keys optional; set SESSION_SECRET for the web app in prod
+npm run build                 # tsc -> dist/
+
+npm start                     # batch CLI: score every JSON file in ./input
+npm run dev:server            # web app at http://localhost:3000
+npm run demo                  # self-demo: generates leads and scores them, no input needed
+```
+
+Try the demo with no AI key — it uses the curated fallback dataset and still produces a believable
+spread of buckets:
+
+```bash
+npm run demo -- --no-ai --persona default-icp --output ./demo-output
 ```
 
 ## Input format
@@ -30,34 +70,78 @@ Each input file is a single profile object or an array of them:
 
 ```json
 {
-  "_recordId": "optional",
   "name": "Jane Doe",
   "education": ["MBA @ Harvard University"],
-  "jobs": ["Product Manager @ Google"],
-  "skills": ["Leadership"],
-  "company_details": { "name": "Google", "category": "Tech" }
+  "jobs": ["VP Engineering @ Stripe", "Engineer @ Google"],
+  "skills": ["AI", "Strategy", "Leadership"],
+  "company_details": { "name": "Stripe", "category": "fintech" },
+  "years_experience": 12,
+  "lastActive": "2026-05-01"
 }
 ```
 
-## Configuration & environment
+Only `name` is required. Missing fields lower the data-quality score; below a threshold the lead is
+rejected rather than scored on bad data.
 
-See [`.env.example`](./.env.example) for all variables (`AI_PROVIDER`, `GEMINI_API_KEY`,
-`OPENAI_API_KEY`, `SESSION_SECRET`, `PORT`, `LOG_LEVEL`) and `src/config/config.ts` for scoring
-weights, tier lists, buckets, and feature flags (also editable in the web Config Editor).
+## The three entry points
 
-## Scripts
+| Mode    | Command              | Use it for                                                        |
+| ------- | -------------------- | ----------------------------------------------------------------- |
+| **CLI** | `npm start`          | Batch-score `./input`; writes results, a summary, and a CSV.      |
+| **Web** | `npm run dev:server` | Drag-and-drop scoring, history, personas, config — multi-user.    |
+| **Demo**| `npm run demo`       | Self-contained showcase; `--no-ai`, `--persona`, `--count`, etc.  |
 
-`build` · `start` · `dev` · `server` / `dev:server` · `demo` · `typecheck` · `lint` · `test` ·
-`test:e2e` · `format`.
+## Configuration
+
+All scoring behaviour is config-driven — weights, university/company tier lists, bucket thresholds,
+thinking-quality keywords, recency window, and feature flags. See [`.env.example`](./.env.example)
+for environment variables (`AI_PROVIDER`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `SESSION_SECRET`,
+`PORT`, `LOG_LEVEL`) and [`src/config/config.ts`](./src/config/config.ts) for the defaults. In the
+web app, the **Config Editor** lets you change the live config as validated JSON — edits apply to
+scoring immediately.
+
+## Testing & quality
+
+```bash
+npm run typecheck     # tsc --noEmit (strict)
+npm run lint          # ESLint — enforces the global prohibitions (no any, no console, etc.)
+npm test -- --coverage   # Jest unit + integration; per-file coverage gate
+npm run test:e2e      # Playwright top-5 user journeys (boots a live server)
+```
+
+Coverage is enforced **per file**, not just in aggregate — every source file must clear
+90% lines/functions/statements and 80% branches. (Why this matters:
+[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md#testing-strategy).)
+
+## Project structure
+
+```
+src/
+  batch/         reusable batch pipeline (shared by CLI and demo)
+  cli/           CLI entry + report formatter
+  config/        Zod config schema + mutable ConfigService
+  demo/          self-demo: args, fallback dataset, AI/fallback resolution, report
+  domain/        types inferred from Zod schemas
+  lib/           errors (DomainError hierarchy), logger (pino+redaction), security (csrf, path-guard)
+  llm/           LLMClient interface + Gemini/OpenAI/Null providers + factory
+  modules/       the six scoring modules + explanation + outreach-email
+  repositories/  file-handler, persona, session-store
+  schemas/       Zod schemas (single source of truth)
+  web/           Express server, middleware, controllers, routes, EJS views
+demo.ts          demo entry glue
+tests/           unit/ integration/ e2e/
+docs/            architecture (ADRs), deployment, video script, ci, security
+```
 
 ## Documentation
 
-- [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) — architecture, module catalogue, roadmap, traceability.
-- [`requirement.md`](./requirement.md) — full SRS.
-- `docs/architecture/` — ADRs.
-
-_Demo screenshot/GIF and Loom walkthrough: TODO (added after Phase 3)._
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — design thinking, decisions, process, traceability.
+- [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) — how to deploy and run it in production.
+- [`docs/VIDEO_SCRIPT.md`](./docs/VIDEO_SCRIPT.md) — script for the 5-minute walkthrough video.
+- [`docs/architecture/`](./docs/architecture/) — Architecture Decision Records.
+- [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) — module catalogue, roadmap, traceability matrix.
+- [`requirement.md`](./requirement.md) — the full software requirements specification.
 
 ## License
 
-MIT
+See repository.
