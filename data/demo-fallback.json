@@ -1,0 +1,139 @@
+[
+  {
+    "name": "Ananya Sharma",
+    "education": ["B.Tech Computer Science @ IIT Bombay"],
+    "jobs": ["VP Engineering @ Stripe", "Senior Engineer @ Google"],
+    "skills": ["AI", "Machine Learning", "Strategy", "Vision", "Innovation", "Scalable", "Transformation"],
+    "company_details": { "name": "Stripe", "category": "fintech" },
+    "years_experience": 12,
+    "lastActive": "2026-05-01"
+  },
+  {
+    "name": "Marcus Chen",
+    "education": ["BS Mathematics @ Stanford University"],
+    "jobs": ["Chief Technology Officer @ Microsoft", "Product Lead @ Meta"],
+    "skills": ["AI", "Strategy", "Innovation", "Scalable", "Vision", "Data-driven"],
+    "company_details": { "name": "Microsoft", "category": "bigtech" },
+    "years_experience": 14,
+    "lastActive": "2026-04-20"
+  },
+  {
+    "name": "Hannah Weiss",
+    "education": ["PhD Computer Science @ Massachusetts Institute of Technology"],
+    "jobs": ["Head of Research @ Amazon", "Scientist @ Apple"],
+    "skills": ["Machine Learning", "AI", "Innovation", "Strategy", "Scalable", "Vision", "Transformation"],
+    "company_details": { "name": "Amazon", "category": "ai" },
+    "years_experience": 11,
+    "lastActive": "2026-05-15"
+  },
+  {
+    "name": "Elena Petrova",
+    "education": ["MS Information Systems @ University of Michigan"],
+    "jobs": ["Engineering Manager @ Amazon", "Software Engineer @ Uber"],
+    "skills": ["Strategy", "Innovation", "Scalable", "AI"],
+    "company_details": { "name": "Amazon", "category": "bigtech" },
+    "years_experience": 10,
+    "lastActive": "2026-04-01"
+  },
+  {
+    "name": "Isabella Santos",
+    "education": ["MBA @ Delhi University"],
+    "jobs": ["VP Growth @ Flipkart", "Manager @ Zomato"],
+    "skills": ["Strategy", "Data-driven", "Innovation", "Scalable", "Marketing"],
+    "company_details": { "name": "Flipkart", "category": "ecommerce" },
+    "years_experience": 11,
+    "lastActive": "2026-05-10"
+  },
+  {
+    "name": "Grace Liu",
+    "education": ["MS Computer Science @ Boston University"],
+    "jobs": ["Staff Engineer @ Netflix", "Engineer @ PayPal"],
+    "skills": ["Scalable", "AI", "Strategy", "Innovation", "Vision"],
+    "company_details": { "name": "Netflix", "category": "media" },
+    "years_experience": 9,
+    "lastActive": "2026-04-28"
+  },
+  {
+    "name": "Jonas Andersen",
+    "education": ["MSc Computer Science @ BITS Pilani"],
+    "jobs": ["VP Engineering @ Razorpay", "Engineer @ Swiggy"],
+    "skills": ["Strategy", "Scalable", "AI"],
+    "company_details": { "name": "Razorpay", "category": "fintech" },
+    "years_experience": 8,
+    "lastActive": "2026-05-05"
+  },
+  {
+    "name": "Diego Alvarez",
+    "education": ["MBA @ IIM Ahmedabad"],
+    "jobs": ["Chief Revenue Officer @ Amazon", "Head of Sales @ Flipkart"],
+    "skills": ["Strategy", "Vision", "Transformation", "Innovation", "Data-driven", "Scalable"],
+    "company_details": { "name": "Amazon", "category": "bigtech" },
+    "years_experience": 15,
+    "lastActive": "2026-04-12"
+  },
+  {
+    "name": "Sofia Romano",
+    "education": ["MEng Robotics @ Massachusetts Institute of Technology"],
+    "jobs": ["Robotics Engineer @ Apple", "Researcher @ Google"],
+    "skills": ["Robotics", "Innovation", "AI", "Scalable"],
+    "company_details": { "name": "Apple", "category": "deeptech" },
+    "years_experience": 7,
+    "lastActive": "2026-05-18"
+  },
+  {
+    "name": "Priya Nair",
+    "education": ["B.Sc Statistics @ NIT Trichy"],
+    "jobs": ["Data Scientist @ Flipkart", "Analyst @ Perfios"],
+    "skills": ["Python", "SQL", "Data-driven"],
+    "company_details": { "name": "Flipkart", "category": "ecommerce" },
+    "years_experience": 6
+  },
+  {
+    "name": "Liam Murphy",
+    "education": ["BSc Software Engineering @ Trinity College Dublin"],
+    "jobs": ["Full Stack Developer @ PayPal"],
+    "skills": ["React", "Scalable", "AI", "Strategy"],
+    "company_details": { "name": "PayPal", "category": "fintech" },
+    "years_experience": 5
+  },
+  {
+    "name": "Omar Haddad",
+    "education": ["B.Eng @ American University of Beirut"],
+    "jobs": ["DevOps Engineer @ Uber"],
+    "skills": ["Kubernetes", "Scalable", "Innovation", "AI"],
+    "company_details": { "name": "Uber", "category": "mobility" },
+    "years_experience": 6
+  },
+  {
+    "name": "Fatima Al-Sayed",
+    "education": ["BSc Computer Science @ Delhi University"],
+    "jobs": ["Backend Engineer @ Swiggy"],
+    "skills": ["Python", "Scalable"],
+    "company_details": { "name": "Swiggy", "category": "foodtech" },
+    "years_experience": 5
+  },
+  {
+    "name": "Rahul Verma",
+    "education": ["B.Com @ Mumbai University"],
+    "jobs": ["Operations Associate @ Zomato"],
+    "skills": ["Operations", "Excel"],
+    "company_details": { "name": "Zomato", "category": "foodtech" },
+    "years_experience": 2
+  },
+  {
+    "name": "David Okonkwo",
+    "education": ["B.Tech Electrical @ Covenant University"],
+    "jobs": ["Embedded Engineer @ Local Startup"],
+    "skills": ["C", "Embedded Systems"],
+    "company_details": { "name": "Local Startup", "category": "startup" },
+    "years_experience": 3
+  },
+  {
+    "name": "Kenji Tanaka",
+    "education": ["B.Eng Mechanical @ University of Tokyo"],
+    "jobs": ["Hardware Engineer @ Sony"],
+    "skills": ["Hardware Design", "CAD"],
+    "company_details": { "name": "Sony", "category": "electronics" },
+    "years_experience": 4
+  }
+]
