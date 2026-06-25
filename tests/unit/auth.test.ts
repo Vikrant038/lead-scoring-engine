@@ -65,10 +65,10 @@ interface MockResState {
   status?: number;
 }
 
-function makeRes(): { res: Response; state: MockResState } {
+function makeRes(localsOverride?: Record<string, unknown>): { res: Response; state: MockResState } {
   const state: MockResState = { rendered: null, redirected: null, cookiesCleared: [] };
   const res = {
-    locals: { csrfToken: 'csrf-tok', cspNonce: 'nonce' },
+    locals: { csrfToken: 'csrf-tok', cspNonce: 'nonce', ...localsOverride },
     render(view: string, data: Record<string, unknown>) {
       state.rendered = { view, data };
     },
@@ -325,5 +325,77 @@ describe('logoutController', () => {
     const next = jest.fn() as unknown as NextFunction;
     logoutController(req, res, next);
     expect(next).toHaveBeenCalledWith(fakeErr);
+  });
+});
+
+describe('auth controller defensive branches', () => {
+  it('handles missing cspNonce in login page, login error, register page, register errors', async () => {
+    const resNoNonce = { csrfToken: 'csrf-tok', cspNonce: undefined }; // cspNonce is missing/undefined
+
+    // 1. login page
+    {
+      const req = makeReq({ session: {} });
+      const { res, state } = makeRes(resNoNonce);
+      loginPageController(req, res, jest.fn());
+      expect(state.rendered?.data.cspNonce).toBe('');
+    }
+    // 2. register page
+    {
+      const req = makeReq({ session: {} });
+      const { res, state } = makeRes(resNoNonce);
+      registerPageController(req, res, jest.fn());
+      expect(state.rendered?.data.cspNonce).toBe('');
+    }
+    // 3. login error (fields missing)
+    {
+      const req = makeReq({ session: {}, body: { email: '', password: '' } });
+      const { res, state } = makeRes(resNoNonce);
+      await loginController(req, res, jest.fn());
+      expect(state.rendered?.data.cspNonce).toBe('');
+    }
+    // 4. login error (invalid credentials)
+    {
+      const req = makeReq({ session: {}, body: { email: 'nobody@x.com', password: 'nope' } });
+      const { res, state } = makeRes(resNoNonce);
+      await loginController(req, res, jest.fn());
+      expect(state.rendered?.data.cspNonce).toBe('');
+    }
+    // 5. register error (fields missing)
+    {
+      const req = makeReq({ session: {}, body: { email: '', password: '', confirm: '' } });
+      const { res, state } = makeRes(resNoNonce);
+      await registerController(req, res, jest.fn());
+      expect(state.rendered?.data.cspNonce).toBe('');
+    }
+    // 6. register error (passwords mismatch)
+    {
+      const req = makeReq({
+        session: {},
+        body: { email: 'a@b.com', password: 'foo', confirm: 'bar' },
+      });
+      const { res, state } = makeRes(resNoNonce);
+      await registerController(req, res, jest.fn());
+      expect(state.rendered?.data.cspNonce).toBe('');
+    }
+    // 7. register error (password too short)
+    {
+      const req = makeReq({
+        session: {},
+        body: { email: 'a@b.com', password: 'short', confirm: 'short' },
+      });
+      const { res, state } = makeRes(resNoNonce);
+      await registerController(req, res, jest.fn());
+      expect(state.rendered?.data.cspNonce).toBe('');
+    }
+    // 8. register error (email already exists)
+    {
+      const req = makeReq({
+        session: {},
+        body: { email: 'exists@ctrl.com', password: 'password1234', confirm: 'password1234' },
+      });
+      const { res, state } = makeRes(resNoNonce);
+      await registerController(req, res, jest.fn());
+      expect(state.rendered?.data.cspNonce).toBe('');
+    }
   });
 });

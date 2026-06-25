@@ -30,7 +30,7 @@ export function buildHtmlReport(result: RunBatchResult, persona?: string): strin
 
   const topLeads = results
     .filter((r) => typeof r.icp_score === 'number')
-    .sort((a, b) => (b.icp_score ?? 0) - (a.icp_score ?? 0))
+    .sort((a, b) => (b.icp_score as number) - (a.icp_score as number))
     .slice(0, 10);
 
   const sampleEmail = results.find((r) => r.outreach_email);

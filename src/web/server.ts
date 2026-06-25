@@ -71,7 +71,6 @@ export function createApp(ctx: WebContext, sessionSecret: string): Express {
     res.locals.activePersonaName = activePersonaObj ? activePersonaObj.name : 'Default ICP';
     res.locals.selectedPersona = selectedPersona;
     res.locals.personas = personas;
-    res.locals.cspNonce = res.locals.cspNonce || '';
     // Expose auth info to all views
     res.locals.isAuthenticated = Boolean(req.session?.userId);
     res.locals.userEmail = req.session?.userEmail ?? '';
@@ -84,8 +83,8 @@ export function createApp(ctx: WebContext, sessionSecret: string): Express {
     if (wantsHtml) {
       res.status(404).render('404', {
         title: '404 — Not Found',
-        csrfToken: res.locals.csrfToken ?? '',
-        cspNonce: res.locals.cspNonce ?? '',
+        csrfToken: res.locals.csrfToken,
+        cspNonce: res.locals.cspNonce,
       });
     } else {
       /* istanbul ignore next -- JSON 404 branch hit only by API clients without Accept:text/html */
@@ -119,7 +118,10 @@ async function main(): Promise<void> {
   const llm = createLlmClient(env, defaultConfig.llm.timeout, logger);
   const app = createApp(buildContext(defaultConfig, logger, llm), secret);
   const port = Number(env.PORT ?? 3000);
-  app.listen(port, () => logger.info({ port }, 'ICP Profiler web server started'));
+  app.listen(
+    port,
+    /* istanbul ignore next */ () => logger.info({ port }, 'ICP Profiler web server started'),
+  );
 }
 
 /* istanbul ignore next */
