@@ -1,6 +1,11 @@
 import { expect, test } from '@playwright/test';
+import { loginDemoUser } from './helpers';
 
 test.describe('Journey 4: email settings', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginDemoUser(page);
+  });
+
   test('saves sender details and clears the default-settings banner', async ({ page }) => {
     await page.goto('/email-settings');
     await expect(page.getByRole('heading', { name: 'Email settings' })).toBeVisible();

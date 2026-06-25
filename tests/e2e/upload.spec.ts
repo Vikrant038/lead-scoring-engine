@@ -1,7 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { SAMPLE_LEAD, expectLeadInHistory, uploadJson } from './helpers';
+import { SAMPLE_LEAD, expectLeadInHistory, uploadJson, loginDemoUser } from './helpers';
 
 test.describe('Journey 1: upload and score a lead', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginDemoUser(page);
+  });
+
   test('uploads a JSON lead and sees it scored in history', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Upload lead profiles' })).toBeVisible();

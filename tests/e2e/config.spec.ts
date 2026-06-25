@@ -1,6 +1,11 @@
 import { expect, test } from '@playwright/test';
+import { loginDemoUser } from './helpers';
 
 test.describe('Journey 3: configuration editor', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginDemoUser(page);
+  });
+
   test('saves a valid config edit and resets to defaults', async ({ page }) => {
     await page.goto('/config');
     await expect(page.getByRole('heading', { name: 'Configuration' })).toBeVisible();

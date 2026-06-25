@@ -1,7 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { SAMPLE_PERSONA } from './helpers';
+import { SAMPLE_PERSONA, loginDemoUser } from './helpers';
 
 test.describe('Journey 2: persona management', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginDemoUser(page);
+  });
+
   test('uploads a persona, activates it, and sees it on the home dropdown', async ({ page }) => {
     await page.goto('/personas');
     await expect(page.getByRole('heading', { name: 'Personas' })).toBeVisible();

@@ -1,7 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { SAMPLE_LEAD, expectLeadInHistory, uploadJson } from './helpers';
+import { SAMPLE_LEAD, expectLeadInHistory, uploadJson, loginDemoUser } from './helpers';
 
 test.describe('Journey 5: clear my data (F-16-010)', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginDemoUser(page);
+  });
+
   test('uploads a lead then wipes the session silo', async ({ page }) => {
     await uploadJson(page, 'e2e-clear.json', SAMPLE_LEAD);
     await expectLeadInHistory(page, 'E2E Lead');
@@ -11,7 +15,7 @@ test.describe('Journey 5: clear my data (F-16-010)', () => {
 
     await expect(async () => {
       await page.goto('/history');
-      await expect(page.getByText('No processed leads yet.')).toBeVisible();
+      await expect(page.getByText('No leads scored yet')).toBeVisible();
     }).toPass({ timeout: 10_000 });
   });
 });

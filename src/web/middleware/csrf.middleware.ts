@@ -22,7 +22,7 @@ export const verifyCsrf: RequestHandler = (req, _res, next) => {
     return next();
   }
   const header = req.headers['x-csrf-token'];
-  const token = typeof header === 'string' ? header : undefined;
+  const token = typeof header === 'string' ? header : (req.body?._csrf as string | undefined);
   if (!verifyCsrfToken(req.session.csrfToken, token)) {
     return next(new CsrfError());
   }

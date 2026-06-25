@@ -17,6 +17,13 @@ export const SAMPLE_PERSONA = {
   skills_must_have: ['AI'],
 };
 
+/** Log in using the Demo User button. */
+export async function loginDemoUser(page: Page): Promise<void> {
+  await page.goto('/auth/login');
+  await page.click('#demo-login-btn');
+  await page.waitForURL((url) => url.pathname === '/');
+}
+
 /** Upload a JSON payload through the home dropzone's hidden file input. */
 export async function uploadJson(page: Page, fileName: string, payload: unknown): Promise<void> {
   await page.goto('/');
