@@ -69,7 +69,7 @@ export const defaultConfig: AppConfig = {
   // FR-12-021 persona fit thresholds.
   personaFit: { excellent: 90, good: 75, partial: 50 },
   processing: { batchDelayMs: 2000, pollIntervalMs: 2000 },
-  llm: { provider: 'none', timeout: 15000 },
+  llm: { provider: 'none', timeout: 15000, apiKey: undefined },
   paths: {
     inputDir: './input',
     outputDir: './output',

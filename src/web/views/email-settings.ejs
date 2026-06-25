@@ -1,35 +1,163 @@
 <!doctype html>
 <html lang="en">
-  <head><%- include('partials/head') %></head>
-  <body class="bg-gray-50 text-gray-900">
-    <%- include('partials/nav') %>
-    <main class="max-w-xl mx-auto p-6">
-      <h1 class="text-2xl font-semibold mb-4">Email settings</h1>
-      <% if (isDefault) { %>
-      <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-3 mb-4">
-        Using default values — set yours below so outreach emails are personalised.
-      </p>
-      <% } %>
+  <head>
+    <%- include('partials/head') %>
+    <style>
+      .success-checkmark-scale {
+        animation: checkmark-scale 500ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      }
+      @keyframes checkmark-scale {
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-150">
+    <%- include('partials/header') %>
+    
+    <%
+      // Defensively support both 'emailSettings' and 'settings' variables from the controller
+      const activeSettings = typeof emailSettings !== 'undefined' ? emailSettings : (typeof settings !== 'undefined' ? settings : { senderName: '', company: '', tone: 'friendly' });
+      const hasBanner = typeof isDefault !== 'undefined' ? isDefault : false;
+    %>
 
-      <form id="email-form" class="space-y-4">
-        <div>
-          <label for="senderName" class="block text-sm font-medium mb-1">Sender name</label>
-          <input id="senderName" name="senderName" class="w-full border border-gray-300 rounded p-2" value="<%= settings.senderName %>" required />
+    <main class="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      
+      <!-- Card Container -->
+      <div class="relative bg-white dark:bg-gray-900 border border-gray-250/80 dark:border-gray-800 rounded-3xl p-8 shadow-sm overflow-hidden">
+        
+        <!-- Header -->
+        <div class="mb-8">
+          <h1 class="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Email Settings</h1>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Customize sender identities and tones for outreach draft generation.</p>
         </div>
-        <div>
-          <label for="company" class="block text-sm font-medium mb-1">Company</label>
-          <input id="company" name="company" class="w-full border border-gray-300 rounded p-2" value="<%= settings.company %>" required />
+
+        <% if (hasBanner) { %>
+          <div id="default-banner" class="text-xs text-amber-800 dark:text-amber-450 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-900/30 rounded-2xl p-4 mb-6 font-semibold leading-relaxed">
+            Using default values — set yours below so outreach emails are personalised.
+          </div>
+        <% } %>
+
+        <!-- Card-local Success Overlay -->
+        <div id="success-overlay" class="absolute inset-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm flex flex-col items-center justify-center pointer-events-none opacity-0 scale-95 transition-all duration-500 ease-out z-20">
+          <div id="success-checkmark" class="w-16 h-16 bg-green-50 dark:bg-green-950/30 text-green-500 rounded-full flex items-center justify-center shadow-lg border border-green-100 dark:border-green-900/20 scale-50 opacity-0 transition-all duration-300">
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <p class="text-sm font-bold text-gray-900 dark:text-white mt-4 opacity-0 transition-opacity duration-300 success-text-anim">Settings Saved Successfully</p>
         </div>
-        <div>
-          <label for="tone" class="block text-sm font-medium mb-1">Default tone</label>
-          <input id="tone" name="tone" class="w-full border border-gray-300 rounded p-2" value="<%= settings.tone %>" required />
-        </div>
-        <div class="flex items-center gap-3">
-          <button type="submit" class="px-4 py-2 rounded text-white" style="background-color: #0029ff">Save</button>
-          <span id="status" class="text-sm" role="status"></span>
-        </div>
-      </form>
+
+        <!-- Form -->
+        <form id="email-form" class="space-y-6">
+          
+          <!-- Sender Name -->
+          <div>
+            <label for="senderName" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Sender Name</label>
+            <input 
+              id="senderName" 
+              name="senderName" 
+              type="text" 
+              class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-800 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200 font-medium" 
+              value="<%= activeSettings.senderName %>" 
+              required 
+            />
+          </div>
+
+          <!-- Company -->
+          <div>
+            <label for="company" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Company</label>
+            <input 
+              id="company" 
+              name="company" 
+              type="text" 
+              class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-800 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200 font-medium" 
+              value="<%= activeSettings.company %>" 
+              required 
+            />
+          </div>
+
+          <!-- Tone Selection (Custom Pills) -->
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Default Tone</label>
+            
+            <!-- Hidden input for E2E test checks and standard submits -->
+            <input 
+              id="tone" 
+              name="tone" 
+              type="text" 
+              class="sr-only" 
+              value="<%= activeSettings.tone %>" 
+              tabindex="-1" 
+              aria-hidden="true" 
+            />
+
+            <!-- Pill Radio Grid -->
+            <div class="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Tone Selection">
+              <button 
+                type="button" 
+                data-tone-val="friendly" 
+                class="tone-pill px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-800 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-850 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#0029ff]/40 text-center"
+                role="radio"
+                aria-checked="<%= activeSettings.tone === 'friendly' ? 'true' : 'false' %>"
+              >
+                Friendly
+              </button>
+              <button 
+                type="button" 
+                data-tone-val="professional" 
+                class="tone-pill px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-800 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-850 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#0029ff]/40 text-center"
+                role="radio"
+                aria-checked="<%= activeSettings.tone === 'professional' ? 'true' : 'false' %>"
+              >
+                Professional
+              </button>
+            </div>
+          </div>
+
+          <!-- Footer Action Keys -->
+          <div class="pt-2 space-y-3">
+            <div class="flex items-center gap-4">
+              <button 
+                id="submit-btn" 
+                type="submit" 
+                class="flex-1 inline-flex items-center justify-center px-6 py-3.5 bg-[#0029ff] text-white text-xs font-bold rounded-xl hover:bg-[#0021cc] active:bg-[#001999] shadow-sm shadow-[#0029ff]/10 transition-all duration-150 hover:scale-105 active:scale-95"
+              >
+                <span id="btn-text">Save</span>
+                <svg id="btn-spinner" class="animate-spin h-4 w-4 text-white hidden" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </button>
+              
+              <a 
+                href="/history" 
+                class="px-6 py-3.5 border border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-850 transition duration-150 hover:scale-105 active:scale-95"
+              >
+                Back to History
+              </a>
+            </div>
+
+            <% if (hasBanner) { %>
+              <div class="text-center">
+                <a href="/history" class="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-150 underline underline-offset-2 decoration-dashed">
+                  Skip — use defaults for now
+                </a>
+              </div>
+            <% } %>
+          </div>
+
+        </form>
+
+      </div>
+
+      <!-- Hidden status element for E2E test validations -->
+      <div id="status" class="sr-only" aria-live="polite"></div>
+
     </main>
-    <script src="/js/email-settings.js"></script>
+
+    <script src="/js/email-settings.js" nonce="<%= typeof cspNonce !== 'undefined' ? cspNonce : '' %>"></script>
   </body>
 </html>

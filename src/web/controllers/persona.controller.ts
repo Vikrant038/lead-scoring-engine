@@ -99,3 +99,14 @@ export const setPersonaController = (): RequestHandler => (req, res, next) => {
 export const currentPersonaController = (): RequestHandler => (req, res) => {
   res.json({ personaId: req.session.selectedPersona ?? 'default-icp' });
 };
+
+export const getPersonaController =
+  (ctx: WebContext): RequestHandler =>
+  (req, res, next) => {
+    try {
+      const persona = ctx.personaRepo.get(req.params.id);
+      res.json(persona);
+    } catch (error) {
+      next(error);
+    }
+  };

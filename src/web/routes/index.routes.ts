@@ -15,6 +15,7 @@ import {
 import {
   currentPersonaController,
   deletePersonaController,
+  getPersonaController,
   listPersonasController,
   personaEditPageController,
   personasPageController,
@@ -56,6 +57,7 @@ export function createRouter(ctx: WebContext): Router {
 
   // Personas (F-12)
   router.get('/api/personas', listPersonasController(ctx));
+  router.get('/api/persona/:id', getPersonaController(ctx));
   router.get('/api/current-persona', currentPersonaController());
   router.post('/api/set-persona', setPersonaController());
   router.post('/api/upload-persona', uploadMiddleware, uploadPersonaController(ctx));

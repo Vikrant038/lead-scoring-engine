@@ -59,6 +59,7 @@ export const appConfigSchema = z
     llm: z.object({
       provider: z.enum(['none', 'gemini', 'openai']),
       timeout: z.number().positive(),
+      apiKey: z.string().optional(),
     }),
     paths: z.object({
       inputDir: z.string(),

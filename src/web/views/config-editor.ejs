@@ -1,30 +1,280 @@
 <!doctype html>
 <html lang="en">
-  <head><%- include('partials/head') %></head>
-  <body class="bg-gray-50 text-gray-900">
-    <%- include('partials/nav') %>
-    <main class="max-w-3xl mx-auto p-6">
-      <h1 class="text-2xl font-semibold mb-4">Configuration</h1>
-      <p class="text-sm text-gray-600 mb-4">
-        Edit the runtime configuration as JSON. Saving applies it immediately to all scoring.
+  <head>
+    <%- include('partials/head') %>
+    <style>
+      .config-section { transition: max-height 300ms ease-out, opacity 200ms ease-out; }
+      .config-section.collapsed { max-height: 0; opacity: 0; overflow: hidden; }
+      .section-header { transition: background-color 150ms ease; }
+      .section-header:hover { background-color: rgba(0, 41, 255, 0.03); }
+      .dark .section-header:hover { background-color: rgba(0, 41, 255, 0.05); }
+      .tag-input-wrapper:focus-within { border-color: #0029ff; box-shadow: 0 0 0 3px rgba(0, 41, 255, 0.1); }
+      .tag { animation: tagIn 200ms cubic-bezier(0.16, 1, 0.3, 1); }
+      @keyframes tagIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+    </style>
+  </head>
+  <body class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-150">
+    <%- include('partials/header') %>
+    
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div class="flex items-center justify-between mb-2">
+        <h1 class="text-2xl font-black text-gray-900 dark:text-white">Configuration Editor</h1>
+        <div class="flex items-center gap-2">
+          <button id="toggle-raw-btn" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition duration-150">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+            Raw JSON
+          </button>
+        </div>
+      </div>
+      <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+        Modify the lead scoring rules, weights, and timeout parameters. Saving applies the new configuration immediately.
       </p>
 
-      <textarea
-        id="config-json"
-        class="w-full h-96 font-mono text-sm border border-gray-300 rounded-lg p-3 bg-white"
-        spellcheck="false"
-      ><%= configJson %></textarea>
+      <!-- Raw JSON Panel (hidden by default) -->
+      <div id="raw-json-panel" class="hidden mb-6">
+        <div class="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
+          <textarea
+            id="config-json"
+            class="w-full h-[400px] font-mono text-sm border border-gray-300 dark:border-gray-800 rounded-xl p-4 bg-gray-900 text-gray-100 focus:outline-none focus:border-[#0029ff] focus:ring-2 focus:ring-[#0029ff]/20 transition-all duration-200"
+            spellcheck="false"
+            aria-label="Configuration JSON"
+          ><%= typeof configJson !== 'undefined' ? configJson : (typeof configString !== 'undefined' ? configString : '') %></textarea>
+        </div>
+      </div>
 
-      <div class="mt-4 flex items-center gap-3">
-        <button id="save-btn" class="px-4 py-2 rounded text-white" style="background-color: #0029ff">
+      <!-- Form-Based Config Editor -->
+      <div id="form-panel" class="space-y-3">
+
+        <!-- Section 1: Scoring Weights -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+          <button type="button" class="section-header w-full flex items-center justify-between px-5 py-4 cursor-pointer" data-section="scoring-weights">
+            <div class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 dark:bg-[#0029ff]/10 text-[#0029ff] dark:text-blue-400 text-xs font-bold">W</span>
+              <span class="text-sm font-bold text-gray-900 dark:text-white">Scoring Weights</span>
+            </div>
+            <svg class="section-chevron w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+          </button>
+          <div id="scoring-weights" class="config-section px-5 pb-5">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Education</label>
+                <input type="number" name="scoring.weights.education" step="0.05" min="0" max="1" class="cfg-input w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Experience</label>
+                <input type="number" name="scoring.weights.experience" step="0.05" min="0" max="1" class="cfg-input w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Thinking</label>
+                <input type="number" name="scoring.weights.thinking" step="0.05" min="0" max="1" class="cfg-input w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200" />
+              </div>
+            </div>
+            <div class="mt-4">
+              <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Tier Scores</p>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label class="block text-[10px] text-gray-400 mb-1">Tier 1</label>
+                  <input type="number" name="scoring.tierScores.tier_1" class="cfg-input w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200" />
+                </div>
+                <div>
+                  <label class="block text-[10px] text-gray-400 mb-1">Tier 2</label>
+                  <input type="number" name="scoring.tierScores.tier_2" class="cfg-input w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200" />
+                </div>
+                <div>
+                  <label class="block text-[10px] text-gray-400 mb-1">Tier 3</label>
+                  <input type="number" name="scoring.tierScores.tier_3" class="cfg-input w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200" />
+                </div>
+                <div>
+                  <label class="block text-[10px] text-gray-400 mb-1">Unknown</label>
+                  <input type="number" name="scoring.tierScores.unknown" class="cfg-input w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: University Tiers -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+          <button type="button" class="section-header w-full flex items-center justify-between px-5 py-4 cursor-pointer" data-section="university-tiers">
+            <div class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold">U</span>
+              <span class="text-sm font-bold text-gray-900 dark:text-white">University Tiers</span>
+            </div>
+            <svg class="section-chevron w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+          </button>
+          <div id="university-tiers" class="config-section collapsed px-5 pb-5">
+            <div class="space-y-3">
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Tier 1</label>
+                <div class="tag-input-wrapper flex flex-wrap gap-1.5 p-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl min-h-[42px] transition-all duration-200" data-tag-field="tiers.universities.tier_1"></div>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Tier 2</label>
+                <div class="tag-input-wrapper flex flex-wrap gap-1.5 p-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl min-h-[42px] transition-all duration-200" data-tag-field="tiers.universities.tier_2"></div>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Tier 3</label>
+                <div class="tag-input-wrapper flex flex-wrap gap-1.5 p-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl min-h-[42px] transition-all duration-200" data-tag-field="tiers.universities.tier_3"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Company Tiers -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+          <button type="button" class="section-header w-full flex items-center justify-between px-5 py-4 cursor-pointer" data-section="company-tiers">
+            <div class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 text-xs font-bold">C</span>
+              <span class="text-sm font-bold text-gray-900 dark:text-white">Company Tiers</span>
+            </div>
+            <svg class="section-chevron w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+          </button>
+          <div id="company-tiers" class="config-section collapsed px-5 pb-5">
+            <div class="space-y-3">
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Tier 1</label>
+                <div class="tag-input-wrapper flex flex-wrap gap-1.5 p-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl min-h-[42px] transition-all duration-200" data-tag-field="tiers.companies.tier_1"></div>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Tier 2</label>
+                <div class="tag-input-wrapper flex flex-wrap gap-1.5 p-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl min-h-[42px] transition-all duration-200" data-tag-field="tiers.companies.tier_2"></div>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Tier 3</label>
+                <div class="tag-input-wrapper flex flex-wrap gap-1.5 p-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl min-h-[42px] transition-all duration-200" data-tag-field="tiers.companies.tier_3"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: Score Buckets -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+          <button type="button" class="section-header w-full flex items-center justify-between px-5 py-4 cursor-pointer" data-section="buckets-section">
+            <div class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold">B</span>
+              <span class="text-sm font-bold text-gray-900 dark:text-white">Score Buckets</span>
+            </div>
+            <svg class="section-chevron w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+          </button>
+          <div id="buckets-section" class="config-section collapsed px-5 pb-5">
+            <div id="buckets-container" class="space-y-2"></div>
+          </div>
+        </div>
+
+        <!-- Section 5: Thinking Keywords -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+          <button type="button" class="section-header w-full flex items-center justify-between px-5 py-4 cursor-pointer" data-section="thinking-section">
+            <div class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 text-xs font-bold">T</span>
+              <span class="text-sm font-bold text-gray-900 dark:text-white">Thinking Keywords</span>
+            </div>
+            <svg class="section-chevron w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+          </button>
+          <div id="thinking-section" class="config-section collapsed px-5 pb-5">
+            <div class="space-y-3">
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Visionary Keywords</label>
+                <div class="tag-input-wrapper flex flex-wrap gap-1.5 p-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl min-h-[42px] transition-all duration-200" data-tag-field="thinking.visionaryKeywords"></div>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Leadership Keywords</label>
+                <div class="tag-input-wrapper flex flex-wrap gap-1.5 p-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl min-h-[42px] transition-all duration-200" data-tag-field="thinking.leadershipKeywords"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 6: Recency & Persona Fit -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+          <button type="button" class="section-header w-full flex items-center justify-between px-5 py-4 cursor-pointer" data-section="recency-section">
+            <div class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-bold">R</span>
+              <span class="text-sm font-bold text-gray-900 dark:text-white">Recency & Persona Fit</span>
+            </div>
+            <svg class="section-chevron w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+          </button>
+          <div id="recency-section" class="config-section collapsed px-5 pb-5">
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Months</label>
+                <input type="number" name="recency.months" min="1" class="cfg-input w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Bonus</label>
+                <input type="number" name="recency.bonus" class="cfg-input w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Excellent</label>
+                <input type="number" name="personaFit.excellent" class="cfg-input w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Good</label>
+                <input type="number" name="personaFit.good" class="cfg-input w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Partial</label>
+                <input type="number" name="personaFit.partial" class="cfg-input w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 7: Processing, LLM, Paths & Features -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+          <button type="button" class="section-header w-full flex items-center justify-between px-5 py-4 cursor-pointer" data-section="system-section">
+            <div class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-bold">S</span>
+              <span class="text-sm font-bold text-gray-900 dark:text-white">System Settings</span>
+            </div>
+            <svg class="section-chevron w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+          </button>
+          <div id="system-section" class="config-section collapsed px-5 pb-5">
+            <div class="space-y-5">
+              <!-- LLM Configuration -->
+              <div>
+                <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">LLM Configuration</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-[10px] text-gray-400 mb-1">Provider</label>
+                    <select name="llm.provider" class="cfg-input w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200">
+                      <option value="none">None</option>
+                      <option value="gemini">Gemini</option>
+                      <option value="openai">OpenAI</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-gray-400 mb-1">API Key</label>
+                    <input type="password" name="llm.apiKey" placeholder="Using environment variable if empty" class="cfg-input w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="mt-6 flex items-center gap-4">
+        <button id="save-btn" class="px-6 py-3 rounded-xl text-white text-xs font-bold bg-[#0029ff] hover:bg-[#0021cc] active:bg-[#001999] shadow-sm shadow-[#0029ff]/10 hover:shadow hover:scale-105 active:scale-95 transition-all duration-150">
           Save
         </button>
-        <button id="reset-btn" class="px-4 py-2 rounded border border-gray-300 bg-white">
+        <button id="reset-btn" class="px-6 py-3 rounded-xl border border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-gray-50 dark:hover:bg-gray-800 active:bg-gray-100 dark:active:bg-gray-750 hover:scale-105 active:scale-95 transition-all duration-150">
           Reset to Defaults
         </button>
-        <span id="status" class="text-sm" role="status"></span>
+        <a href="/" class="px-6 py-3 rounded-xl border border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-gray-50 dark:hover:bg-gray-800 active:bg-gray-100 dark:active:bg-gray-750 transition duration-150 ml-auto">
+          Back
+        </a>
       </div>
     </main>
-    <script src="/js/config.js"></script>
+
+    <!-- Toast Area Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none" role="status" aria-live="polite"></div>
+    <div id="status" class="sr-only" aria-live="polite"></div>
+
+    <!-- Pass config data to JS -->
+    <script id="config-data" type="application/json"><%- typeof configJson !== 'undefined' ? configJson : (typeof configString !== 'undefined' ? configString : '{}') %></script>
+
+    <script src="/js/config-editor.js" nonce="<%= typeof cspNonce !== 'undefined' ? cspNonce : '' %>"></script>
   </body>
 </html>

@@ -137,7 +137,6 @@ docs/            architecture (ADRs), deployment, video script, ci, security
 
 - [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — design thinking, decisions, process, traceability.
 - [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) — how to deploy and run it in production.
-- [`docs/VIDEO_SCRIPT.md`](./docs/VIDEO_SCRIPT.md) — script for the 5-minute walkthrough video.
 - [`docs/architecture/`](./docs/architecture/) — Architecture Decision Records.
 - [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) — module catalogue, roadmap, traceability matrix.
 - [`requirement.md`](./requirement.md) — the full software requirements specification.

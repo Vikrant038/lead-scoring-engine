@@ -5,6 +5,7 @@ test.describe('Journey 3: configuration editor', () => {
     await page.goto('/config');
     await expect(page.getByRole('heading', { name: 'Configuration' })).toBeVisible();
 
+    await page.click('#toggle-raw-btn');
     const textarea = page.locator('#config-json');
     const raw = await textarea.inputValue();
     const config = JSON.parse(raw);
@@ -20,6 +21,7 @@ test.describe('Journey 3: configuration editor', () => {
 
   test('rejects an invalid config edit with an error message', async ({ page }) => {
     await page.goto('/config');
+    await page.click('#toggle-raw-btn');
     await page.locator('#config-json').fill('{ "not": "a valid config" }');
     await page.getByRole('button', { name: 'Save' }).click();
     await expect(page.locator('#status')).not.toHaveText('Saved.', { timeout: 10_000 });

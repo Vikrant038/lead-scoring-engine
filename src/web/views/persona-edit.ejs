@@ -1,26 +1,253 @@
 <!doctype html>
 <html lang="en">
-  <head><%- include('partials/head') %></head>
-  <body class="bg-gray-50 text-gray-900" data-persona-id="<%= personaId %>">
-    <%- include('partials/nav') %>
-    <main class="max-w-3xl mx-auto p-6">
-      <h1 class="text-2xl font-semibold mb-1">Edit persona</h1>
-      <p class="text-sm text-gray-500 mb-4"><%= personaId %></p>
+  <head>
+    <%- include('partials/head') %>
+    <style>
+      .form-section { transition: max-height 300ms ease-out, opacity 200ms ease-out; }
+      .form-section.collapsed { max-height: 0; opacity: 0; overflow: hidden; }
+      .section-header { transition: background-color 150ms ease; }
+      .section-header:hover { background-color: rgba(0, 41, 255, 0.03); }
+      .dark .section-header:hover { background-color: rgba(0, 41, 255, 0.05); }
+      .tag-input-wrapper:focus-within { border-color: #0029ff; box-shadow: 0 0 0 3px rgba(0, 41, 255, 0.1); }
+      .tag { animation: tagIn 200ms cubic-bezier(0.16, 1, 0.3, 1); }
+      @keyframes tagIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+    </style>
+  </head>
+  <body class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-150" data-persona-id="<%= personaId %>">
+    <%- include('partials/header') %>
+    
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-      <textarea
-        id="persona-json"
-        class="w-full h-96 font-mono text-sm border border-gray-300 rounded-lg p-3 bg-white"
-        spellcheck="false"
-      ><%= personaJson %></textarea>
+    <!-- Embedded Initial Persona Data -->
+    <script id="persona-data" type="application/json"><%- personaJson %></script>
 
-      <div class="mt-4 flex items-center gap-3">
-        <button id="save-btn" class="px-4 py-2 rounded text-white" style="background-color: #0029ff">
-          Save
+    <main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      
+      <!-- Top Header Actions -->
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <h1 class="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Edit Persona</h1>
+          <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 mt-0.5">ID: <%= personaId %></p>
+        </div>
+        <button id="toggle-raw-btn" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition duration-150">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+          </svg>
+          Raw JSON
         </button>
-        <a href="/personas" class="px-4 py-2 rounded border border-gray-300 bg-white">Back</a>
-        <span id="status" class="text-sm" role="status"></span>
       </div>
+
+      <!-- Raw JSON Editor Panel (Hidden by default) -->
+      <div id="raw-json-panel" class="hidden mb-6 mt-4">
+        <div class="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
+          <textarea
+            id="persona-json"
+            class="w-full h-[450px] font-mono text-sm border border-gray-300 dark:border-gray-800 rounded-xl p-4 bg-gray-900 text-gray-100 focus:outline-none focus:border-[#0029ff] focus:ring-2 focus:ring-[#0029ff]/20 transition-all duration-200"
+            spellcheck="false"
+            aria-label="Persona JSON payload"
+          ><%= personaJson %></textarea>
+        </div>
+      </div>
+
+      <!-- Form-Based Editor Panel -->
+      <div id="form-panel" class="space-y-4 mt-6">
+        
+        <!-- Section 1: Basic Information -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+          <h2 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-[#0029ff]"></span>
+            Basic Information
+          </h2>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Persona Name <span class="text-red-500">*</span></label>
+              <input 
+                type="text" 
+                id="persona-name-input" 
+                name="name" 
+                required 
+                class="w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200"
+                placeholder="e.g. Executive Sponsor or Mid-Level Manager"
+              />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Description <span class="text-red-500">*</span></label>
+              <textarea 
+                id="persona-desc-input" 
+                name="description" 
+                required 
+                rows="3"
+                class="w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200"
+                placeholder="Describe the ideal lead profile matching this persona..."
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Weights (Optional) -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+          <button type="button" class="section-header w-full flex items-center justify-between px-5 py-4 cursor-pointer" data-section="weights-section">
+            <div class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 dark:bg-[#0029ff]/10 text-[#0029ff] dark:text-blue-400 text-xs font-bold">W</span>
+              <span class="text-sm font-bold text-gray-900 dark:text-white">Scoring Weights (Optional)</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <!-- Switch toggle -->
+              <label class="relative inline-flex items-center cursor-pointer select-none stop-propagation" onclick="event.stopPropagation()">
+                <input type="checkbox" id="weights-enable" class="sr-only peer" />
+                <div class="relative w-9 h-5 bg-gray-200 dark:bg-gray-800 rounded-full peer peer-focus:ring-0 peer-checked:bg-[#0029ff] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div>
+              </label>
+              <svg class="section-chevron w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </button>
+          <div id="weights-section" class="form-section collapsed px-5 pb-5 border-t border-gray-50 dark:border-gray-850 pt-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="weights-inputs-container">
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Education Weight</label>
+                <input type="number" name="weights.education" step="0.05" min="0" max="1" class="w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Experience Weight</label>
+                <input type="number" name="weights.experience" step="0.05" min="0" max="1" class="w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Thinking Weight</label>
+                <input type="number" name="weights.thinking" step="0.05" min="0" max="1" class="w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Education Criteria (Optional) -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+          <button type="button" class="section-header w-full flex items-center justify-between px-5 py-4 cursor-pointer" data-section="education-section">
+            <div class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold">E</span>
+              <span class="text-sm font-bold text-gray-900 dark:text-white">Education Criteria (Optional)</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <!-- Switch toggle -->
+              <label class="relative inline-flex items-center cursor-pointer select-none stop-propagation" onclick="event.stopPropagation()">
+                <input type="checkbox" id="education-enable" class="sr-only peer" />
+                <div class="relative w-9 h-5 bg-gray-200 dark:bg-gray-800 rounded-full peer peer-focus:ring-0 peer-checked:bg-[#0029ff] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div>
+              </label>
+              <svg class="section-chevron w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </button>
+          <div id="education-section" class="form-section collapsed px-5 pb-5 border-t border-gray-50 dark:border-gray-850 pt-4">
+            <div id="education-inputs-container">
+              <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Preferred University Tiers</label>
+              <div class="flex items-center gap-6 mt-1">
+                <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+                  <input type="checkbox" name="education.preferred_tiers" value="tier_1" class="w-4 h-4 text-[#0029ff] border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-950 rounded focus:ring-[#0029ff]" />
+                  Tier 1
+                </label>
+                <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+                  <input type="checkbox" name="education.preferred_tiers" value="tier_2" class="w-4 h-4 text-[#0029ff] border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-950 rounded focus:ring-[#0029ff]" />
+                  Tier 2
+                </label>
+                <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+                  <input type="checkbox" name="education.preferred_tiers" value="tier_3" class="w-4 h-4 text-[#0029ff] border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-950 rounded focus:ring-[#0029ff]" />
+                  Tier 3
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: Experience Criteria (Optional) -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+          <button type="button" class="section-header w-full flex items-center justify-between px-5 py-4 cursor-pointer" data-section="experience-section">
+            <div class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 text-xs font-bold">X</span>
+              <span class="text-sm font-bold text-gray-900 dark:text-white">Experience Criteria (Optional)</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <!-- Switch toggle -->
+              <label class="relative inline-flex items-center cursor-pointer select-none stop-propagation" onclick="event.stopPropagation()">
+                <input type="checkbox" id="experience-enable" class="sr-only peer" />
+                <div class="relative w-9 h-5 bg-gray-200 dark:bg-gray-800 rounded-full peer peer-focus:ring-0 peer-checked:bg-[#0029ff] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div>
+              </label>
+              <svg class="section-chevron w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </button>
+          <div id="experience-section" class="form-section collapsed px-5 pb-5 border-t border-gray-50 dark:border-gray-850 pt-4">
+            <div class="space-y-4" id="experience-inputs-container">
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Roles Must Include</label>
+                <div class="tag-input-wrapper flex flex-wrap gap-1.5 p-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl min-h-[42px] transition-all duration-200" data-tag-field="experience.roles_must_include"></div>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Preferred Company Tiers</label>
+                <div class="flex items-center gap-6 mt-1">
+                  <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+                    <input type="checkbox" name="experience.preferred_companies_tiers" value="tier_1" class="w-4 h-4 text-[#0029ff] border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-950 rounded focus:ring-[#0029ff]" />
+                    Tier 1
+                  </label>
+                  <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+                    <input type="checkbox" name="experience.preferred_companies_tiers" value="tier_2" class="w-4 h-4 text-[#0029ff] border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-950 rounded focus:ring-[#0029ff]" />
+                    Tier 2
+                  </label>
+                  <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+                    <input type="checkbox" name="experience.preferred_companies_tiers" value="tier_3" class="w-4 h-4 text-[#0029ff] border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-950 rounded focus:ring-[#0029ff]" />
+                    Tier 3
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Minimum Years Experience</label>
+                <input type="number" name="experience.min_years_experience" min="0" class="w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0029ff] focus:border-transparent transition-all duration-200" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 5: Skills Criteria (Optional) -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+          <button type="button" class="section-header w-full flex items-center justify-between px-5 py-4 cursor-pointer" data-section="skills-section">
+            <div class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 text-xs font-bold">S</span>
+              <span class="text-sm font-bold text-gray-900 dark:text-white">Skills Criteria (Optional)</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <!-- Switch toggle -->
+              <label class="relative inline-flex items-center cursor-pointer select-none stop-propagation" onclick="event.stopPropagation()">
+                <input type="checkbox" id="skills-enable" class="sr-only peer" />
+                <div class="relative w-9 h-5 bg-gray-200 dark:bg-gray-800 rounded-full peer peer-focus:ring-0 peer-checked:bg-[#0029ff] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div>
+              </label>
+              <svg class="section-chevron w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </button>
+          <div id="skills-section" class="form-section collapsed px-5 pb-5 border-t border-gray-50 dark:border-gray-850 pt-4">
+            <div id="skills-inputs-container">
+              <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Skills Must Have</label>
+              <div class="tag-input-wrapper flex flex-wrap gap-1.5 p-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl min-h-[42px] transition-all duration-200" data-tag-field="skills_must_have"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Save / Cancel Actions -->
+      <div class="mt-8 flex items-center gap-3">
+        <button id="save-btn" class="px-6 py-2.5 rounded-xl text-white text-xs font-bold bg-[#0029ff] hover:bg-[#0021cc] active:bg-[#001999] shadow-sm shadow-[#0029ff]/10 hover:shadow transition duration-150">
+          Save Changes
+        </button>
+        <a href="/personas" class="px-6 py-2.5 rounded-xl border border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-gray-50 dark:hover:bg-gray-800 active:bg-gray-100 dark:active:bg-gray-750 transition duration-150">Cancel</a>
+        <span id="status" class="text-xs font-semibold" role="status"></span>
+      </div>
+
     </main>
-    <script src="/js/persona-edit.js"></script>
+
+    <script src="/js/persona-edit.js" nonce="<%= typeof cspNonce !== 'undefined' ? cspNonce : '' %>"></script>
   </body>
 </html>

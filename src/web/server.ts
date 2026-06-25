@@ -22,6 +22,7 @@ import { createErrorHandler } from './middleware/error-handler.middleware';
 import { QueueService } from './services/queue.service';
 import { createJobProcessor } from './services/job-processor';
 import { createRouter } from './routes/index.routes';
+import { DynamicLlmClient } from '../llm/dynamic-llm.client';
 import type { WebContext } from './context';
 
 const VIEWS_DIR = path.join(process.cwd(), 'src', 'web', 'views');
@@ -30,13 +31,14 @@ const SESSIONS_ROOT = path.join(process.cwd(), 'data', 'sessions');
 
 export function buildContext(config: AppConfig, logger: Logger, llm: LLMClient): WebContext {
   const configService = new ConfigService(config);
+  const dynamicLlm = new DynamicLlmClient(configService, process.env, logger, llm);
   const sessionStore = new SessionStoreRepository(SESSIONS_ROOT, logger);
   const personaRepo = new PersonaRepository(configService.get().paths.personasDir, logger);
-  const emailGenerator = new OutreachEmailService(llm, logger);
+  const emailGenerator = new OutreachEmailService(dynamicLlm, logger);
   const ctx = {
     configService,
     logger,
-    llm,
+    llm: dynamicLlm,
     sessionStore,
     personaRepo,
     emailGenerator,
@@ -58,6 +60,16 @@ export function createApp(ctx: WebContext, sessionSecret: string): Express {
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true }));
   app.use(verifyCsrf); // GUARDRAILS 2.5: guard every mutating route (AJAX sends X-CSRF-Token)
+  app.use((req, res, next) => {
+    const selectedPersona = req.session?.selectedPersona ?? 'default-icp';
+    const personas = ctx.personaRepo.list();
+    const activePersonaObj = personas.find((p) => p.id === selectedPersona) || personas[0];
+    res.locals.activePersonaName = activePersonaObj ? activePersonaObj.name : 'Default ICP';
+    res.locals.selectedPersona = selectedPersona;
+    res.locals.personas = personas;
+    res.locals.cspNonce = res.locals.cspNonce || '';
+    next();
+  });
   app.use(createRouter(ctx));
   app.use(createErrorHandler(ctx.logger));
   return app;

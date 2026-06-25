@@ -1,5 +1,24 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="csrf-token" content="<%= csrfToken %>" />
-<title>ICP Profiler — <%= title %></title>
+<title>ICP Profiler</title>
+<link rel="icon" type="image/png" href="/luxury-hero.png" />
 <link rel="stylesheet" href="/css/app.css" />
+<script nonce="<%= typeof cspNonce !== 'undefined' ? cspNonce : '' %>">
+  if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+</script>
+<style>
+  /* Smooth theme transitions */
+  .theme-transition,
+  .theme-transition * {
+    transition: background-color 200ms ease-in-out, border-color 200ms ease-in-out, color 200ms ease-in-out, fill 200ms ease-in-out, stroke 200ms ease-in-out !important;
+  }
+  /* Hide browser-default details disclosure marker */
+  summary { list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::marker { display: none; content: ''; }
+</style>
