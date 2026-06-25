@@ -27,6 +27,7 @@ describe('parseDemoArgs', () => {
       noAi: false,
       output: './demo-output',
       quiet: false,
+      html: false,
     });
   });
 
@@ -41,7 +42,14 @@ describe('parseDemoArgs', () => {
       '--no-ai',
       '--quiet',
     ]);
-    expect(opts).toEqual({ count: 8, persona: 'cto', output: '/tmp/out', noAi: true, quiet: true });
+    expect(opts).toEqual({
+      count: 8,
+      persona: 'cto',
+      output: '/tmp/out',
+      noAi: true,
+      quiet: true,
+      html: false,
+    });
   });
 
   it('ignores an invalid count and a value-less persona/output', () => {
@@ -161,7 +169,7 @@ describe('run-demo', () => {
 
   function context(overrides: Partial<DemoContext>): DemoContext {
     return {
-      options: { count: 3, noAi: false, output: path.join(root, 'out'), quiet: true },
+      options: { count: 3, noAi: false, output: path.join(root, 'out'), quiet: true, html: false },
       config,
       logger: silentLogger,
       llm: new NullProvider(),
@@ -188,12 +196,23 @@ describe('run-demo', () => {
     });
     expect(
       loadDemoPersona(
-        context({ options: { count: 3, persona: 'cto', noAi: true, output: root, quiet: true } }),
+        context({
+          options: { count: 3, persona: 'cto', noAi: true, output: root, quiet: true, html: false },
+        }),
       )?.name,
     ).toBe('CTO');
     expect(
       loadDemoPersona(
-        context({ options: { count: 3, persona: 'ghost', noAi: true, output: root, quiet: true } }),
+        context({
+          options: {
+            count: 3,
+            persona: 'ghost',
+            noAi: true,
+            output: root,
+            quiet: true,
+            html: false,
+          },
+        }),
       ),
     ).toBeUndefined();
     expect(loadDemoPersona(context({}))).toBeUndefined();
@@ -201,7 +220,7 @@ describe('run-demo', () => {
 
   it('uses the fallback dataset when AI is disabled', async () => {
     const { profiles, source } = await resolveProfiles(
-      context({ options: { count: 3, noAi: true, output: root, quiet: true } }),
+      context({ options: { count: 3, noAi: true, output: root, quiet: true, html: false } }),
     );
     expect(source).toBe('fallback');
     expect(profiles.length).toBeGreaterThanOrEqual(15);
@@ -226,7 +245,7 @@ describe('run-demo', () => {
   it('runs the full batch end-to-end and prints a report (no AI)', async () => {
     const print = jest.fn();
     const ctx = context({
-      options: { count: 3, noAi: true, output: path.join(root, 'out'), quiet: true },
+      options: { count: 3, noAi: true, output: path.join(root, 'out'), quiet: true, html: false },
       print,
     });
     const result = await runDemo(ctx);

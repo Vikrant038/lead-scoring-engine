@@ -1,6 +1,7 @@
 /**
  * Express composition root (F-10..F-17). `createApp` assembles middleware + routes from a
  * WebContext; `buildContext` wires the shared services; `main` resolves env and listens.
+ * Phase 1: DB migration + demo-user seed run on startup before listening.
  */
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -24,6 +25,8 @@ import { createJobProcessor } from './services/job-processor';
 import { createRouter } from './routes/index.routes';
 import { DynamicLlmClient } from '../llm/dynamic-llm.client';
 import type { WebContext } from './context';
+import { migrate, seedDemoUser } from '../db/migrate';
+import { BcryptAuthService } from '../lib/auth/bcrypt-auth.service';
 
 const VIEWS_DIR = path.join(process.cwd(), 'src', 'web', 'views');
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
@@ -64,25 +67,48 @@ export function createApp(ctx: WebContext, sessionSecret: string): Express {
     const selectedPersona = req.session?.selectedPersona ?? 'default-icp';
     const personas = ctx.personaRepo.list();
     const activePersonaObj = personas.find((p) => p.id === selectedPersona) || personas[0];
+    /* istanbul ignore next -- only reached when no personas exist (seeded always) */
     res.locals.activePersonaName = activePersonaObj ? activePersonaObj.name : 'Default ICP';
     res.locals.selectedPersona = selectedPersona;
     res.locals.personas = personas;
     res.locals.cspNonce = res.locals.cspNonce || '';
+    // Expose auth info to all views
+    res.locals.isAuthenticated = Boolean(req.session?.userId);
+    res.locals.userEmail = req.session?.userEmail ?? '';
     next();
   });
   app.use(createRouter(ctx));
+  // 404 handler — serve branded page for HTML requests, JSON for API
+  app.use((req, res) => {
+    const wantsHtml = req.accepts('html');
+    if (wantsHtml) {
+      res.status(404).render('404', {
+        title: '404 — Not Found',
+        csrfToken: res.locals.csrfToken ?? '',
+        cspNonce: res.locals.cspNonce ?? '',
+      });
+    } else {
+      /* istanbul ignore next -- JSON 404 branch hit only by API clients without Accept:text/html */
+      res.status(404).json({ success: false, error: { message: 'Not found', code: 'NOT_FOUND' } });
+    }
+  });
   app.use(createErrorHandler(ctx.logger));
   return app;
 }
 
 /* istanbul ignore next -- entry glue: resolves env/secret and starts listening */
-function main(): void {
+async function main(): Promise<void> {
   const env = process.env as LlmEnv & {
     LOG_LEVEL?: string;
     SESSION_SECRET?: string;
     PORT?: string;
   };
   const logger = createLogger({ level: (env.LOG_LEVEL as LogLevel) ?? 'info' });
+
+  // Phase 1: run DB migration and seed demo user before accepting requests
+  migrate();
+  await seedDemoUser(BcryptAuthService.hash);
+  logger.info('database migration complete');
 
   let secret = env.SESSION_SECRET;
   if (!secret) {

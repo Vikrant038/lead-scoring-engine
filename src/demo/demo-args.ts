@@ -12,6 +12,8 @@ export interface DemoOptions {
   output: string;
   /** Suppress info-level logging. */
   quiet: boolean;
+  /** Generate a standalone HTML report after scoring. */
+  html: boolean;
 }
 
 const DEFAULT_COUNT = 15;
@@ -23,6 +25,7 @@ export function parseDemoArgs(argv: string[]): DemoOptions {
     noAi: false,
     output: DEFAULT_OUTPUT,
     quiet: false,
+    html: false,
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -55,6 +58,9 @@ export function parseDemoArgs(argv: string[]): DemoOptions {
         break;
       case '--quiet':
         options.quiet = true;
+        break;
+      case '--html':
+        options.html = true;
         break;
       default:
         break;

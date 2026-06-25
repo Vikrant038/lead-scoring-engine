@@ -272,7 +272,11 @@ describe('web controllers (unit)', () => {
       const result = await seedResult();
       const res = mockRes();
       await regenerateEmailController(ctx)(
-        req({ params: { recordId: result._recordId }, query: { tone: 'casual' }, session: {} }),
+        req({
+          params: { recordId: result._recordId },
+          query: { tone: 'casual' },
+          session: { userId: 's1' },
+        }),
         res,
         jest.fn(),
       );
@@ -282,7 +286,7 @@ describe('web controllers (unit)', () => {
       // No tone query → falls back to the session/default tone (covers the other branch).
       const noTone = mockRes();
       await regenerateEmailController(ctx)(
-        req({ params: { recordId: result._recordId }, query: {}, session: {} }),
+        req({ params: { recordId: result._recordId }, query: {}, session: { userId: 's1' } }),
         noTone,
         jest.fn(),
       );
@@ -292,7 +296,7 @@ describe('web controllers (unit)', () => {
     it('404s regenerate when the result is missing', async () => {
       const next = jest.fn();
       await regenerateEmailController(ctx)(
-        req({ params: { recordId: 'nope' }, query: {}, session: {} }),
+        req({ params: { recordId: 'nope' }, query: {}, session: { userId: 's1' } }),
         mockRes(),
         next,
       );
@@ -311,7 +315,7 @@ describe('web controllers (unit)', () => {
       new FileHandlerRepository(dirs, ctx.logger).writeProfileResult(orphan);
       const next = jest.fn();
       await regenerateEmailController(ctx)(
-        req({ params: { recordId: 'orphan' }, query: {}, session: {} }),
+        req({ params: { recordId: 'orphan' }, query: {}, session: { userId: 's1' } }),
         mockRes(),
         next,
       );
@@ -322,7 +326,7 @@ describe('web controllers (unit)', () => {
       const dirs = ctx.sessionStore.ensure('s1');
       const fh = new FileHandlerRepository(dirs, ctx.logger);
       const empty = mockRes();
-      exportEmailsController(ctx)(req({}), empty, jest.fn());
+      exportEmailsController(ctx)(req({ session: { userId: 's1' } }), empty, jest.fn());
       expect(empty.body).toContain('No email drafts available');
 
       fh.writeProfileResult({
@@ -335,7 +339,7 @@ describe('web controllers (unit)', () => {
         timestamp: new Date().toISOString(),
       });
       const filled = mockRes();
-      exportEmailsController(ctx)(req({}), filled, jest.fn());
+      exportEmailsController(ctx)(req({ session: { userId: 's1' } }), filled, jest.fn());
       expect(filled.body).toContain('Subject: Hi');
       expect(filled.headers.contentDisposition).toBe('outreach-emails.txt');
     });
@@ -343,9 +347,13 @@ describe('web controllers (unit)', () => {
     it('clears the session data silo and resets selections', () => {
       const dirs = ctx.sessionStore.ensure('s1');
       expect(fs.existsSync(dirs.base)).toBe(true);
-      const session: Record<string, unknown> = { selectedPersona: 'cto', emailSettings: {} };
+      const session: Record<string, unknown> = {
+        userId: 's1',
+        selectedPersona: 'cto',
+        emailSettings: {},
+      };
       const res = mockRes();
-      clearDataController(ctx)(req({ session, sessionID: 's1' }), res, jest.fn());
+      clearDataController(ctx)(req({ session }), res, jest.fn());
       expect(fs.existsSync(dirs.base)).toBe(false);
       expect(session.selectedPersona).toBeUndefined();
     });

@@ -14,6 +14,10 @@ logs/*
 input/*
 output/*
 data/sessions/*
+# SQLite database (Phase 1) — runtime artefact, not committed
+data/*.db
+data/*.db-shm
+data/*.db-wal
 # E2E-created personas (the packaged default-icp.json stays tracked)
 personas/e2e-*.json
 personas/.trash/

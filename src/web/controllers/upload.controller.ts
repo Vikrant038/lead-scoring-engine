@@ -26,7 +26,7 @@ export const uploadController =
         throw new ValidationError('file', 'no file uploaded');
       }
       const job = upload.accept(
-        req.sessionID,
+        req.session.userId!,
         req.file,
         req.session.selectedPersona,
         req.session.emailSettings,

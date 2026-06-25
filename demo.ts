@@ -1,7 +1,9 @@
 /**
  * Self-demo entry point (F-15). Wires real env/logger/LLM, then runs the injected demo flow.
  * The orchestration and reporting live in `src/demo/` (unit-tested); this file is entry glue.
+ * Phase 0: adds --html flag to produce a standalone HTML report.
  */
+import fs from 'node:fs';
 import path from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import chalk from 'chalk';
@@ -12,6 +14,7 @@ import { NullProvider } from './src/llm/null.provider';
 import type { LLMClient } from './src/llm/llm-client.interface';
 import { parseDemoArgs } from './src/demo/demo-args';
 import { runDemo } from './src/demo/run-demo';
+import { buildHtmlReport } from './src/demo/demo-html-report';
 
 /* istanbul ignore next -- cosmetic colouriser for console output */
 function print(line: string): void {
@@ -43,7 +46,7 @@ async function main(): Promise<void> {
     features: { enableScoreExplanation: aiActive, enableEmailGeneration: aiActive },
   };
 
-  await runDemo({
+  const result = await runDemo({
     options,
     config,
     logger,
@@ -51,6 +54,16 @@ async function main(): Promise<void> {
     print,
     fallbackPath: path.join(process.cwd(), 'data', 'demo-fallback.json'),
   });
+
+  if (options.html) {
+    const html = buildHtmlReport(result, options.persona);
+    const reportDir = path.resolve(options.output);
+    fs.mkdirSync(reportDir, { recursive: true });
+    const reportPath = path.join(reportDir, 'demo-report.html');
+    fs.writeFileSync(reportPath, html, 'utf8');
+    print(chalk.bold.green(`\n✅ HTML report written to: ${reportPath}`));
+    print(chalk.gray('   Open it in your browser to see the full report.'));
+  }
 }
 
 /* istanbul ignore next -- direct-execution guard */

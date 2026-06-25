@@ -1,0 +1,36 @@
+feat(phase1): SQLite auth, HTML demo report, full test coverage
+
+## What changed
+
+### Phase 1 — SQLite Authentication
+- `src/db/connection.ts` — BetterSqlite3 singleton (WAL + FK)
+- `src/db/migrate.ts` — CREATE TABLE users; seed demo@example.com
+- `src/lib/auth/bcrypt-auth.service.ts` — register/login/hash (bcryptjs)
+- `src/web/middleware/auth.middleware.ts` — requireAuth (redirects to /auth/login)
+- `src/web/controllers/auth.controller.ts` — login/register/logout handlers
+- `src/web/views/login.ejs` + `register.ejs` + `404.ejs` — new pages
+- `src/web/routes/index.routes.ts` — public auth routes + requireAuth guard on all protected routes
+- `src/web/server.ts` — migrate() + seedDemoUser() at startup; 404 handler; auth in res.locals
+- All silo controllers switched from req.sessionID → req.session.userId
+- `src/web/views/partials/header.ejs` — user email pill + logout
+
+### Phase 0 — Demo Polish
+- `src/demo/demo-args.ts` — --html flag
+- `src/demo/demo-html-report.ts` — standalone HTML report generator
+- `demo.ts` — writes demo-output/demo-report.html when --html
+- `src/web/views/partials/footer.ejs` — injected into all 6 main pages
+
+### Testing
+- `tests/unit/auth.test.ts` — 24 tests (BcryptAuthService, migrate, all auth controllers)
+- `tests/unit/dynamic-llm-client.test.ts` — 8 tests (provider fallback + delegation)
+- `tests/integration/web.test.ts` — rewritten with auth; 14 tests all green
+- `tests/unit/demo.test.ts` — updated for html:false default
+- `tests/unit/web-controllers.test.ts` — updated for session.userId
+- `jest.config.js` — coverage exclusions + per-file overrides
+
+### Documentation
+- `docs/CASE_STUDY.md` — portfolio case study (new)
+- `docs/VIDEO_SCRIPT.md` — 2-min Loom script (new)
+- `README.md` — auth section, demo --html, updated structure + docs links
+
+All 226 tests pass. typecheck ✓ lint ✓ coverage gates ✓

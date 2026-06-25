@@ -1,5 +1,5 @@
 /**
- * Type augmentation for session data (CSRF token, persona, email settings) and the
+ * Type augmentation for session data (CSRF token, persona, email settings, auth) and the
  * request-scoped correlation id.
  */
 import 'express-session';
@@ -10,6 +10,12 @@ declare module 'express-session' {
     csrfToken?: string;
     selectedPersona?: string;
     emailSettings?: EmailSettings;
+    /** Authenticated user id (Phase 1 — set on login, cleared on logout). */
+    userId?: string;
+    /** Email of the authenticated user (for display). */
+    userEmail?: string;
+    /** URL to redirect to after login. */
+    returnTo?: string;
   }
 }
 

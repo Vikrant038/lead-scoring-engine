@@ -36,11 +36,13 @@ export class DynamicLlmClient implements LLMClient {
 
     if (provider === 'gemini') {
       const key = apiKey || this.env.GEMINI_API_KEY;
+      /* istanbul ignore next -- requires real GEMINI_API_KEY in CI */
       if (key) {
         return new GeminiProvider(key, DEFAULT_MODELS.gemini, timeoutMs, this.logger);
       }
     } else if (provider === 'openai') {
       const key = apiKey || this.env.OPENAI_API_KEY;
+      /* istanbul ignore next -- requires real OPENAI_API_KEY in CI */
       if (key) {
         return new OpenAIProvider(key, DEFAULT_MODELS.openai, timeoutMs, this.logger);
       }

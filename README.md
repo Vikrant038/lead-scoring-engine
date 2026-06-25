@@ -62,7 +62,23 @@ spread of buckets:
 
 ```bash
 npm run demo -- --no-ai --persona default-icp --output ./demo-output
+npm run demo -- --no-ai --html --count 10   # also writes demo-output/demo-report.html
 ```
+
+## Authentication
+
+The web app uses **session-based authentication** backed by SQLite. On first run a demo account is
+seeded automatically:
+
+| Email | Password |
+|-------|----------|
+| `demo@example.com` | `password` |
+
+Anyone can create their own account via the Register page. All data is isolated per user — one
+user cannot see or access another's uploaded leads or history.
+
+> **Production note:** Set `SESSION_SECRET` in your environment. Without it a random secret is
+> generated on each startup (sessions reset on restart). See [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md).
 
 ## Input format
 
@@ -98,7 +114,7 @@ thinking-quality keywords, recency window, and feature flags. See [`.env.example
 for environment variables (`AI_PROVIDER`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `SESSION_SECRET`,
 `PORT`, `LOG_LEVEL`) and [`src/config/config.ts`](./src/config/config.ts) for the defaults. In the
 web app, the **Config Editor** lets you change the live config as validated JSON — edits apply to
-scoring immediately.
+scoring immediately without a server restart.
 
 ## Testing & quality
 
@@ -120,24 +136,27 @@ src/
   batch/         reusable batch pipeline (shared by CLI and demo)
   cli/           CLI entry + report formatter
   config/        Zod config schema + mutable ConfigService
-  demo/          self-demo: args, fallback dataset, AI/fallback resolution, report
+  db/            SQLite connection singleton + migration + seed
+  demo/          self-demo: args, fallback dataset, AI/fallback resolution, HTML report
   domain/        types inferred from Zod schemas
-  lib/           errors (DomainError hierarchy), logger (pino+redaction), security (csrf, path-guard)
-  llm/           LLMClient interface + Gemini/OpenAI/Null providers + factory
+  lib/           errors (DomainError hierarchy), logger (pino+redaction), security (csrf, path-guard, auth)
+  llm/           LLMClient interface + Gemini/OpenAI/Null providers + DynamicLlmClient
   modules/       the six scoring modules + explanation + outreach-email
   repositories/  file-handler, persona, session-store
   schemas/       Zod schemas (single source of truth)
   web/           Express server, middleware, controllers, routes, EJS views
 demo.ts          demo entry glue
 tests/           unit/ integration/ e2e/
-docs/            architecture (ADRs), deployment, video script, ci, security
+docs/            architecture (ADRs), deployment, video script, case study, ci, security
 ```
 
 ## Documentation
 
 - [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — design thinking, decisions, process, traceability.
 - [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) — how to deploy and run it in production.
-- [`docs/architecture/`](./docs/architecture/) — Architecture Decision Records.
+- [`docs/CASE_STUDY.md`](./docs/CASE_STUDY.md) — portfolio case study with problem, solution, results.
+- [`docs/VIDEO_SCRIPT.md`](./docs/VIDEO_SCRIPT.md) — 2-minute Loom demo recording script.
+- [`docs/architecture/`](./docs/architecture/) — Architecture Decision Records (ADRs 001–004).
 - [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) — module catalogue, roadmap, traceability matrix.
 - [`requirement.md`](./requirement.md) — the full software requirements specification.
 

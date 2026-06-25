@@ -1,130 +1,76 @@
-# 5-Minute Walkthrough — Video Script & Storyboard
+# Video Script — ICP Profiler Demo (≤ 2 minutes)
 
-A shot-by-shot script for a ~5-minute demo video. It's written so you can read the **Say** column
-almost verbatim while doing the actions in the **Show** column. Total target: **5:00**. Keep energy
-up, don't read specs — tell the story.
-
-**Before you record**
-
-- `npm run build && npm run build:css`
-- Have two browser windows ready (one normal, one incognito) for the isolation demo.
-- Pre-stage a small JSON lead file on your desktop (`jane.json`) and the persona file.
-- Optional: set an AI key so the explanation + email render live. If not, narrate that it degrades
-  gracefully — that's a feature, not a gap.
-- Terminal font large; hide bookmarks bar; clear `./demo-output`.
+> Record this as a Loom video. Keep it tight — every second counts.
 
 ---
 
-## 0:00 – 0:30 — The hook (the problem)
+## Setup (before recording)
 
-**Show:** Your face, or a spreadsheet of 500 leads.
-
-**Say:**
-> "Here's a sales team's reality: a spreadsheet with 500 leads and one question — who do I actually
-> call today? Answering that by hand is slow, inconsistent, and biased by whoever's reading the list.
-> I built a Lead Scoring Engine that answers it in code — and, importantly, *explains* every score
-> instead of hiding it in a black box. Let me show you."
+- Have the terminal ready with this project open
+- Have the live app running at http://localhost:3000 (or the Render URL)
+- A test lead file ready in `./input/` (e.g. `jane-doe.json`)
+- Browser open to the app, logged out (so the login page shows first)
 
 ---
 
-## 0:30 – 1:15 — The self-demo (whole pipeline in one command)
+## Script
 
-**Show:** Terminal. Run:
-```bash
-npm run demo -- --no-ai --persona default-icp --output ./demo-output
+### 0:00 — Hook (10 seconds)
+> *"Sales teams waste hours manually qualifying leads. I built a tool that does it in seconds."*
+
+Open the terminal. Run:
 ```
+npm run demo -- --no-ai --html --count 10
+```
+Watch the coloured terminal output.
 
-**Say:**
-> "Fastest way to see it work — the self-demo. One command. It generates leads, runs the full
-> pipeline, and prints a summary. I'm running it with `--no-ai` on purpose, to make a point: no API
-> key, and it still works. Here's the bucket distribution — HIGH, MEDIUM, LOW, NOT FIT — the average
-> score, and the top persona matches with their fit. Every one of these numbers is explainable."
+### 0:20 — Show the HTML report (20 seconds)
+> *"With the `--html` flag, it generates a standalone report you can share with anyone."*
 
-**Show:** Point at the bucket distribution and the top-3 persona matches in the output.
+Open `demo-output/demo-report.html` in the browser. Scroll slowly.
+- Point to the bucket distribution
+- Point to the top-10 leads table with score bars
+- Point to the sample outreach email
 
----
+### 0:45 — Show the web app (40 seconds)
+> *"There's also a full web app. Let me show you."*
 
-## 1:15 – 2:30 — The web app: upload → score → history
+Navigate to the live URL. The login page shows.
 
-**Show:** Browser at `localhost:3000`. Drag `jane.json` onto the dropzone. Watch the queue tick to
-completed. Click **History**.
+> *"Anyone can try it — I've got a demo account."*
 
-**Say:**
-> "Now the web app. Drag a lead in — it goes into a processing queue with live progress. When it's
-> done, it shows up in history with its ICP score and bucket. And this is the part that matters:
-> click in and you see the *component scores* — education, experience, thinking quality — the parts
-> that produced the final number. A salesperson can argue with this score, which means they'll
-> actually trust it."
+Click **"Try the demo"** button. Land on the home page.
 
-**Show:** Open the lead's result / download. If AI is on, show the explanation + the 📧 email panel.
+> *"Drag and drop a JSON lead file..."*
 
-**Say (if AI on):**
-> "With an AI key, it also writes a plain-English explanation and a ready-to-send outreach email,
-> toned to the lead's bucket. With no key, those simply don't appear — the scoring never breaks."
+Drag `jane-doe.json` onto the dropzone. Watch the live progress indicator.
 
----
+Click on **History** in the nav. The result appears.
 
-## 2:30 – 3:15 — Personas & config (it's tunable)
+> *"Expand it — you get the full breakdown: component scores, persona fit, and a drafted outreach email."*
 
-**Show:** Go to **Personas**, upload/activate a persona. Then **Config** — change a weight, Save,
-show "Saved." Then **Reset to Defaults**.
+Click **Details** on the row. Scroll through the expanded panel.
 
-**Say:**
-> "The scoring isn't hardcoded opinion — it's configurable. I can define a persona — the skills,
-> roles, and company tiers I care about — and score leads against it with a gap analysis. And the
-> whole scoring config is editable live, as validated JSON: change a weight, save, and the next
-> score uses it immediately. Bad config is rejected, not silently applied."
+### 1:30 — Architecture moment (20 seconds)
+> *"The scoring pipeline is modular: Data Quality → Education → Experience → Thinking Quality → Scorer → Profiler. Weights are configurable, AI is optional."*
+
+Click on **Config** in the nav. Show the LLM provider dropdown.
+
+### 1:55 — CTA (5 seconds)
+> *"Repo and live demo links are in the description. Thanks for watching."*
 
 ---
 
-## 3:15 – 4:00 — The thing most demos skip: multi-user isolation
+## Key Links to include in description
 
-**Show:** Side-by-side: your normal window (with Jane in history) and an incognito window. In
-incognito, go to `/history` — it's empty.
-
-**Say:**
-> "Here's what I'm proudest of. This is multi-user, with no database. Every browser session gets its
-> own sealed silo on disk. Watch — my first window has Jane in its history. This incognito window is
-> a different session: empty. It cannot see, download, or even guess at the other session's data.
-> And any filename derived from a request passes through a path-guard, so a crafted cookie can't
-> escape the data directory. Isolation by design, not by hope."
+- GitHub: `https://github.com/YOUR_HANDLE/lead-scoring-engine`
+- Live Demo: `https://YOUR_APP.onrender.com`
 
 ---
 
-## 4:00 – 4:40 — How it's built (system design, fast)
+## Tips for recording
 
-**Show:** Editor: the `src/` tree, then `llm/llm-client.interface.ts` and a controller.
-
-**Say:**
-> "Under the hood it's a strict layered architecture — route, controller, service, repository — and
-> the AI sits behind one interface with three implementations, including a no-op. That's why it
-> degrades gracefully: swapping the model for nothing is a one-line decision. Errors travel as typed
-> data, not exceptions across boundaries. And the whole thing was built under a four-document
-> engineering manifesto with per-file test coverage — every file earns its place, not just the
-> average."
-
----
-
-## 4:40 – 5:00 — Close
-
-**Show:** Back to your face, or the README.
-
-**Say:**
-> "So: a transparent, explainable lead-scoring engine — CLI, web, and self-demo — that treats AI as
-> an enhancement, never a crutch, and isolates every user without a database. It's all on GitHub,
-> with the architecture and the reasoning written up. Thanks for watching."
-
----
-
-## Cheat-sheet (on-screen actions, in order)
-
-1. `npm run demo -- --no-ai --persona default-icp --output ./demo-output`
-2. Web: drag `jane.json` → queue → History → open result (+ email if AI on)
-3. Personas: upload + activate
-4. Config: edit a weight → Save → Reset
-5. Two windows: normal vs incognito `/history` (isolation)
-6. Editor: `src/` tree, `LLMClient` interface, a controller
-7. Close on README / GitHub
-
-**Timing tip:** if you're running long, cut the editor section (4:00–4:40) first — the isolation
-demo and the self-demo are the two moments that land hardest.
+- Use [Loom](https://loom.com) (free, shareable link instantly)
+- Record at 1280×720 minimum
+- Use `--count 10 --no-ai` so the terminal output is quick and readable
+- Speak slowly and clearly — let the visuals do the work
