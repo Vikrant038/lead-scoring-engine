@@ -3,7 +3,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  // Exclude type-only files, EJS views, and not-yet-implemented layers (re-added in their units).
+  // Exclude type-only definition files and root demo script.
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.types.ts',

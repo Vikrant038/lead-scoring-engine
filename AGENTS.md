@@ -99,7 +99,7 @@ tests/
 docs/
   ARCHITECTURE.md  # design thinking, decisions, process, traceability
   DEPLOYMENT.md    # production deploy/run
-  architecture/    # ADRs (adr-001..004)
+  architecture/    # ADRs (adr-001..005)
 ---
 Gotchas & Operational Notes
 Issue	Detail

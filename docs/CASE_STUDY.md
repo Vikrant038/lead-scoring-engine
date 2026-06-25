@@ -78,7 +78,7 @@ Because being able to explain every line — bcrypt, session management, CSRF to
 | AI (optional) | Google Gemini / OpenAI GPT-4o |
 | Database | SQLite (better-sqlite3) with WAL mode |
 | Auth | bcryptjs + express-session |
-| Testing | Jest (unit + integration, per-file 90% gate) + Playwright (E2E) |
+| Testing | Jest (unit + integration, per-file 80% branch / 90% statement gate) + Playwright (E2E) |
 | Security | Helmet, CSRF synchronizer tokens, path guard, rate-aware CSP |
 | CI/CD | GitHub Actions (typecheck → lint → test → audit → SBOM) |
 

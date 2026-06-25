@@ -156,7 +156,7 @@ docs/            architecture (ADRs), deployment, video script, case study, ci, 
 - [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) — how to deploy and run it in production.
 - [`docs/CASE_STUDY.md`](./docs/CASE_STUDY.md) — portfolio case study with problem, solution, results.
 - [`docs/VIDEO_SCRIPT.md`](./docs/VIDEO_SCRIPT.md) — 2-minute Loom demo recording script.
-- [`docs/architecture/`](./docs/architecture/) — Architecture Decision Records (ADRs 001–004).
+- [`docs/architecture/`](./docs/architecture/) — Architecture Decision Records (ADRs 001–005).
 - [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) — module catalogue, roadmap, traceability matrix.
 - [`requirement.md`](./requirement.md) — the full software requirements specification.
 
