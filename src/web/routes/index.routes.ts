@@ -31,7 +31,13 @@ import {
   regenerateEmailController,
   saveEmailSettingsController,
 } from '../controllers/email.controller';
-import { loginPageController, registerPageController } from '../controllers/auth.controller';
+import {
+  loginPageController,
+  loginPostController,
+  registerPageController,
+  registerPostController,
+  logoutController,
+} from '../controllers/auth.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 import { UploadService } from '../services/upload.service';
 import type { WebContext } from '../context';
@@ -40,9 +46,12 @@ export function createRouter(ctx: WebContext): Router {
   const router = Router();
   const uploadService = new UploadService(ctx.sessionStore, ctx.queue);
 
-  // ── Auth views (public; API routes handled by Better Auth at /api/auth/*) ──
+  // ── Auth views & form-submit bridges (public; Better Auth REST at /api/auth/*) ──
   router.get('/auth/login', loginPageController);
+  router.post('/auth/login', loginPostController);
   router.get('/auth/register', registerPageController);
+  router.post('/auth/register', registerPostController);
+  router.get('/auth/logout', logoutController);
 
   // ── Protected pages ────────────────────────────────────────────────────────
   router.get('/', requireAuth, homeController(ctx));
