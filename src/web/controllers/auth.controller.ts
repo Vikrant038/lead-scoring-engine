@@ -1,15 +1,13 @@
 /**
  * Auth view controllers (Phase 1 & Phase 2 Better Auth).
- * Renders login and register pages and bridges HTML form submissions to
- * Better Auth's REST API via fetch().
+ * Renders login/register pages and bridges HTML form submissions to Better Auth's
+ * REST API via fetch().
  *
- * WHY fetch() instead of auth.api.*:
- * Better Auth's server-side handler (auth.api.signInEmail) requires
- * Request-like context including proper headers. Calling it directly from
- * an Express handler without those headers causes schema-lookup errors.
- * Using fetch() against Better Auth's own HTTP endpoint is the simplest,
- * most reliable approach: it handles cookies, CORS, and schema lookups
- * exactly as it would for a browser client.
+ * WHY fetch() with Origin header:
+ * Better Auth validates the Origin header on every mutating request (security).
+ * Server-side fetch() calls don't carry a browser Origin automatically, so we
+ * must add `Origin: <baseURL>` explicitly, and the baseURL must appear in
+ * Better Auth's `trustedOrigins` config (see src/lib/auth/auth.ts).
  */
 import type { RequestHandler } from 'express';
 import { auth } from '../../lib/auth/auth';
@@ -26,8 +24,8 @@ export const loginPageController: RequestHandler = (req, res) => {
     error: req.query.error ?? null,
     cspNonce: res.locals.cspNonce ?? '',
     oauthProviders: {
-      google: Boolean(process.env.GOOGLE_CLIENT_ID),
-      github: Boolean(process.env.GITHUB_CLIENT_ID),
+      google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+      github: Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
     },
   });
 };
@@ -41,8 +39,8 @@ export const registerPageController: RequestHandler = (req, res) => {
     error: req.query.error ?? null,
     cspNonce: res.locals.cspNonce ?? '',
     oauthProviders: {
-      google: Boolean(process.env.GOOGLE_CLIENT_ID),
-      github: Boolean(process.env.GITHUB_CLIENT_ID),
+      google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+      github: Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
     },
   });
 };
@@ -53,12 +51,22 @@ function authBaseUrl(): string {
   return process.env.BETTER_AUTH_URL ?? 'http://localhost:3000';
 }
 
+/** Standard headers for server-side calls to Better Auth REST endpoints. */
+function authFetchHeaders(req: Parameters<RequestHandler>[0]): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    // Better Auth validates Origin — must match trustedOrigins in auth.ts
+    Origin: authBaseUrl(),
+    // Forward browser cookies so the response session cookie chain works
+    ...(req.headers.cookie ? { cookie: req.headers.cookie } : {}),
+  };
+}
+
 // ── Form-submit handlers ────────────────────────────────────────────────────
 
 /**
  * POST /auth/login
- * Proxies to Better Auth's /api/auth/sign-in/email endpoint via HTTP fetch,
- * forwarding the resulting session cookie back to the browser.
+ * Proxies to Better Auth's /api/auth/sign-in/email, forwards the session cookie.
  */
 export const loginPostController: RequestHandler = async (req, res) => {
   const { email, password } = req.body as { email?: string; password?: string };
@@ -70,11 +78,7 @@ export const loginPostController: RequestHandler = async (req, res) => {
   try {
     const authRes = await fetch(`${authBaseUrl()}/api/auth/sign-in/email`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // Forward the browser's cookies so Better Auth can set up the session
-        ...(req.headers.cookie ? { cookie: req.headers.cookie } : {}),
-      },
+      headers: authFetchHeaders(req),
       body: JSON.stringify({ email, password }),
     });
 
@@ -84,12 +88,11 @@ export const loginPostController: RequestHandler = async (req, res) => {
         const data = (await authRes.json()) as { message?: string };
         if (data.message) message = data.message;
       } catch {
-        // ignore parse error
+        // ignore JSON parse error
       }
       return res.redirect(`/auth/login?error=${encodeURIComponent(message)}`);
     }
 
-    // Forward the session cookie Better Auth set
     const setCookie = authRes.headers.get('set-cookie');
     if (setCookie) res.setHeader('Set-Cookie', setCookie);
 
@@ -103,7 +106,7 @@ export const loginPostController: RequestHandler = async (req, res) => {
 
 /**
  * POST /auth/register
- * Proxies to Better Auth's /api/auth/sign-up/email endpoint via HTTP fetch.
+ * Proxies to Better Auth's /api/auth/sign-up/email, forwards the session cookie.
  */
 export const registerPostController: RequestHandler = async (req, res) => {
   const { email, password, name } = req.body as {
@@ -119,10 +122,7 @@ export const registerPostController: RequestHandler = async (req, res) => {
   try {
     const authRes = await fetch(`${authBaseUrl()}/api/auth/sign-up/email`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(req.headers.cookie ? { cookie: req.headers.cookie } : {}),
-      },
+      headers: authFetchHeaders(req),
       body: JSON.stringify({ email, password, name: name ?? email }),
     });
 
@@ -132,7 +132,7 @@ export const registerPostController: RequestHandler = async (req, res) => {
         const data = (await authRes.json()) as { message?: string };
         if (data.message) message = data.message;
       } catch {
-        // ignore parse error
+        // ignore JSON parse error
       }
       return res.redirect(`/auth/register?error=${encodeURIComponent(message)}`);
     }
@@ -148,7 +148,7 @@ export const registerPostController: RequestHandler = async (req, res) => {
 
 /**
  * GET /auth/logout
- * Signs out via Better Auth's REST API, destroys the CSRF session, redirects.
+ * Signs out via Better Auth's REST API, destroys CSRF session, redirects.
  */
 export const logoutController: RequestHandler = async (req, res) => {
   try {
@@ -156,14 +156,11 @@ export const logoutController: RequestHandler = async (req, res) => {
     if (session) {
       await fetch(`${authBaseUrl()}/api/auth/sign-out`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(req.headers.cookie ? { cookie: req.headers.cookie } : {}),
-        },
+        headers: authFetchHeaders(req),
       });
     }
   } catch {
-    // best-effort
+    // best-effort sign-out
   }
 
   req.session.destroy(() => {
