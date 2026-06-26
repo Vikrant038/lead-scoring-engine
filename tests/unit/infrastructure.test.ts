@@ -27,7 +27,7 @@ describe('Infrastructure & Auth Configuration', () => {
     });
   });
 
-  it('auth instance is created with social providers when env vars are set', () => {
+  it('auth instance is created with social providers when env vars are set', async () => {
     // Temporarily set env vars to exercise the google/github branches
     const origGoogle = process.env.GOOGLE_CLIENT_ID;
     const origGoogleSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -52,7 +52,7 @@ describe('Infrastructure & Auth Configuration', () => {
     jest.resetModules();
   });
 
-  it('auth instance is created without social providers when env vars are absent', () => {
+  it('auth instance is created without social providers when env vars are absent', async () => {
     const origGoogle = process.env.GOOGLE_CLIENT_ID;
     const origGoogleSecret = process.env.GOOGLE_CLIENT_SECRET;
     const origGithub = process.env.GITHUB_CLIENT_ID;
