@@ -104,7 +104,7 @@ rejected rather than scored on bad data.
 | Mode    | Command              | Use it for                                                        |
 | ------- | -------------------- | ----------------------------------------------------------------- |
 | **CLI** | `npm start`          | Batch-score `./input`; writes results, a summary, and a CSV.      |
-| **Web** | `npm run dev:server` | Drag-and-drop scoring, history, personas, config — multi-user.    |
+| **Web** | `npm run dev:server` | Drag-and-drop scoring, history, personas, config — multi-user with Better Auth. |
 | **Demo**| `npm run demo`       | Self-contained showcase; `--no-ai`, `--persona`, `--count`, etc.  |
 
 ## Configuration
@@ -136,10 +136,10 @@ src/
   batch/         reusable batch pipeline (shared by CLI and demo)
   cli/           CLI entry + report formatter
   config/        Zod config schema + mutable ConfigService
-  db/            SQLite connection singleton + migration + seed
+  db/            Drizzle ORM schema + SQLite connection + Better Auth migration & seed
   demo/          self-demo: args, fallback dataset, AI/fallback resolution, HTML report
   domain/        types inferred from Zod schemas
-  lib/           errors (DomainError hierarchy), logger (pino+redaction), security (csrf, path-guard, auth)
+  lib/           errors (DomainError hierarchy), logger (pino+redaction), security (csrf, path-guard, better-auth)
   llm/           LLMClient interface + Gemini/OpenAI/Null providers + DynamicLlmClient
   modules/       the six scoring modules + explanation + outreach-email
   repositories/  file-handler, persona, session-store
@@ -156,7 +156,7 @@ docs/            architecture (ADRs), deployment, video script, case study, ci, 
 - [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) — how to deploy and run it in production.
 - [`docs/CASE_STUDY.md`](./docs/CASE_STUDY.md) — portfolio case study with problem, solution, results.
 - [`docs/VIDEO_SCRIPT.md`](./docs/VIDEO_SCRIPT.md) — 2-minute Loom demo recording script.
-- [`docs/architecture/`](./docs/architecture/) — Architecture Decision Records (ADRs 001–005).
+- [`docs/architecture/`](./docs/architecture/) — Architecture Decision Records (ADRs 001–006).
 - [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) — module catalogue, roadmap, traceability matrix.
 - [`requirement.md`](./requirement.md) — the full software requirements specification.
 

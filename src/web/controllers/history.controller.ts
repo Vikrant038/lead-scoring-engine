@@ -28,7 +28,8 @@ export const historyController =
   (ctx: WebContext): RequestHandler =>
   (req, res, next) => {
     try {
-      const dirs = ctx.sessionStore.ensure(req.session.userId!);
+      const userId = req.user!.id;
+      const dirs = ctx.sessionStore.ensure(userId);
       const results = new FileHandlerRepository(dirs, ctx.logger)
         .listResults()
         .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
@@ -48,7 +49,8 @@ export const downloadController =
   (ctx: WebContext): RequestHandler =>
   (req, res, next) => {
     try {
-      const dirs = ctx.sessionStore.ensure(req.session.userId!);
+      const userId = req.user!.id;
+      const dirs = ctx.sessionStore.ensure(userId);
       const filePath = new FileHandlerRepository(dirs, ctx.logger).resultPath(req.params.recordId);
       res.download(filePath);
     } catch (error) {

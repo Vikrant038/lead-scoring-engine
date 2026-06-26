@@ -104,88 +104,17 @@ The file data/icp.db will be created automatically on first run, on the Render p
 
 Why not PostgreSQL? SQLite is a perfect fit for a single‑server demo app. Zero infrastructure, zero cost, and more than enough for hundreds of users.
 
-1.2 User Model & Authentication
-Why custom auth (bcryptjs + express‑session) instead of Better Auth?
+### 1.2 User Model & Better Auth Integration
 
-Portfolio signal: I can explain every line of how authentication works – hashing, session management, CSRF, cookie security. That’s a much stronger signal to a client than “I installed a package.”
+**Why Better Auth instead of custom auth?**
+- **Modern TypeScript-First Standards:** Better Auth provides end-to-end type safety, built-in rate limiting, session management, password reset flows, email verification, and OAuth (Google, GitHub) out of the box.
+- **Database Backend:** Mounted via Drizzle ORM to SQLite (`data/icp.db`), handling schema migrations cleanly.
+- **CSRF & Isolation Co-existence:** Existing `express-session` is retained strictly for CSRF synchronizer tokens (`icp.sid`), separating user identity state into Better Auth sessions (`better-auth.sid`).
 
-Cost: $0 forever. No external service needed.
-
-Integration: I already have express-session wired with CSRF and CSP. Custom auth plugs in directly without replacing the entire session layer.
-
-Simplicity: The full implementation is ~150 lines of code.
-
-Implementation steps:
-Users table – create a migration in src/db/migrate.ts:
-
-ts
-import db from './connection';
-
-export function migrate() {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-    CREATE TABLE IF NOT EXISTS sessions (
-      id TEXT PRIMARY KEY,
-      user_id TEXT,
-      data TEXT NOT NULL DEFAULT '{}',
-      expires_at TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    );
-  `);
-}
-Call migrate() during server startup.
-
-Auth Service (src/lib/auth/bcrypt-auth.service.ts):
-
-ts
-import bcrypt from 'bcryptjs';
-import db from '../../db/connection';
-import { randomUUID } from 'crypto';
-
-export class BcryptAuthService {
-  async register(email: string, password: string) {
-    const hash = await bcrypt.hash(password, 12);
-    const id = randomUUID();
-    db.prepare('INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)').run(id, email, hash);
-    return { id, email };
-  }
-
-  async login(email: string, password: string) {
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
-    if (!user) return null;
-    const valid = await bcrypt.compare(password, user.password_hash);
-    return valid ? { id: user.id, email: user.email } : null;
-  }
-}
-Routes & Views:
-
-GET /auth/login → views/login.ejs
-
-POST /auth/login → validate credentials, set req.session.userId, redirect to /history
-
-GET /auth/register → views/register.ejs
-
-POST /auth/register → create user, set req.session.userId, redirect to /history
-
-POST /auth/logout → destroy session, redirect to /
-
-Middleware (src/web/middleware/auth.middleware.ts):
-
-ts
-export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  if (!req.session.userId) return res.redirect('/auth/login');
-  next();
-}
-Apply it to all routes except /auth/*.
-
-Session Silo Update:
-Change the silo base from data/sessions/{sessionId} to data/sessions/{userId}. So a user who logs in from two browsers sees the same leads (intended behaviour). Your existing resolveWithin path guard will still prevent one user from reaching another’s data.
+**Implementation Details:**
+- Better Auth handler mounted at `/api/auth/*`.
+- Express auth routes (`/auth/login`, `/auth/register`, `/auth/logout`) handled by `auth.controller.ts` interacting with Better Auth API.
+- Session silos updated to partition storage per user (`data/sessions/{userId}/`), ensuring multi-device persistence while `resolveWithin` prevents path traversal.
 
 1.3 Demo User & Quick Login
 After migration, seed a demo user if not exists: demo@example.com / password.

@@ -50,8 +50,8 @@ Every domain type is inferred from a Zod schema — there are no hand-written in
 ### Why no database?
 For a single-server portfolio app, SQLite on a persistent disk is simpler, cheaper, and more transparent than a managed database. Zero infrastructure cost. The file layout (`data/sessions/{userId}/`) is easy to inspect and debug.
 
-### Why custom auth instead of a library?
-Because being able to explain every line — bcrypt, session management, CSRF tokens, cookie security — is a stronger portfolio signal than "I installed a package." The full implementation is ~150 lines.
+### Why Better Auth instead of custom auth?
+We migrated to Better Auth (https://better-auth.com) to demonstrate integration with an enterprise-grade TypeScript authentication framework backed by Drizzle ORM and SQLite. It provides complete identity management (email/password, OAuth, verification, password reset), while retaining express-session strictly for CSRF synchronizer tokens.
 
 ---
 
@@ -77,7 +77,7 @@ Because being able to explain every line — bcrypt, session management, CSRF to
 | Styling | Tailwind CSS |
 | AI (optional) | Google Gemini / OpenAI GPT-4o |
 | Database | SQLite (better-sqlite3) with WAL mode |
-| Auth | bcryptjs + express-session |
+| Auth | Better Auth + Drizzle ORM (SQLite) |
 | Testing | Jest (unit + integration, per-file 80% branch / 90% statement gate) + Playwright (E2E) |
 | Security | Helmet, CSRF synchronizer tokens, path guard, rate-aware CSP |
 | CI/CD | GitHub Actions (typecheck → lint → test → audit → SBOM) |

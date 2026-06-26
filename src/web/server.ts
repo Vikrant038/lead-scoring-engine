@@ -26,7 +26,8 @@ import { createRouter } from './routes/index.routes';
 import { DynamicLlmClient } from '../llm/dynamic-llm.client';
 import type { WebContext } from './context';
 import { migrate, seedDemoUser } from '../db/migrate';
-import { BcryptAuthService } from '../lib/auth/bcrypt-auth.service';
+import { auth } from '../lib/auth/auth';
+import { toNodeHandler, fromNodeHeaders } from 'better-auth/node';
 
 const VIEWS_DIR = path.join(process.cwd(), 'src', 'web', 'views');
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
@@ -62,19 +63,26 @@ export function createApp(ctx: WebContext, sessionSecret: string): Express {
   app.use(ensureCsrfToken);
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true }));
+  app.all('/api/auth/*', toNodeHandler(auth));
   app.use(verifyCsrf); // GUARDRAILS 2.5: guard every mutating route (AJAX sends X-CSRF-Token)
-  app.use((req, res, next) => {
-    const selectedPersona = req.session?.selectedPersona ?? 'default-icp';
-    const personas = ctx.personaRepo.list();
-    const activePersonaObj = personas.find((p) => p.id === selectedPersona) || personas[0];
-    /* istanbul ignore next -- only reached when no personas exist (seeded always) */
-    res.locals.activePersonaName = activePersonaObj ? activePersonaObj.name : 'Default ICP';
-    res.locals.selectedPersona = selectedPersona;
-    res.locals.personas = personas;
-    // Expose auth info to all views
-    res.locals.isAuthenticated = Boolean(req.session?.userId);
-    res.locals.userEmail = req.session?.userEmail ?? '';
-    next();
+  app.use(async (req, res, next) => {
+    try {
+      const selectedPersona = req.session?.selectedPersona ?? 'default-icp';
+      const personas = ctx.personaRepo.list();
+      const activePersonaObj = personas.find((p) => p.id === selectedPersona) || personas[0];
+      /* istanbul ignore next -- only reached when no personas exist (seeded always) */
+      res.locals.activePersonaName = activePersonaObj ? activePersonaObj.name : 'Default ICP';
+      res.locals.selectedPersona = selectedPersona;
+      res.locals.personas = personas;
+      const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
+      res.locals.isAuthenticated = Boolean(session?.user);
+      res.locals.userEmail = session?.user?.email ?? '';
+      res.locals.user = session?.user ?? null;
+      req.user = session?.user ?? null;
+      next();
+    } catch (err) {
+      next(err);
+    }
   });
   app.use(createRouter(ctx));
   // 404 handler — serve branded page for HTML requests, JSON for API
@@ -106,7 +114,7 @@ async function main(): Promise<void> {
 
   // Phase 1: run DB migration and seed demo user before accepting requests
   migrate();
-  await seedDemoUser(BcryptAuthService.hash);
+  await seedDemoUser();
   logger.info('database migration complete');
 
   let secret = env.SESSION_SECRET;

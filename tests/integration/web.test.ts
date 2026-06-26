@@ -14,8 +14,7 @@ import { createJobProcessor } from '../../src/web/services/job-processor';
 import { buildContext, createApp } from '../../src/web/server';
 import type { WebContext } from '../../src/web/context';
 import { silentLogger } from '../helpers/test-deps';
-import { migrate } from '../../src/db/migrate';
-import { BcryptAuthService } from '../../src/lib/auth/bcrypt-auth.service';
+import { seedDemoUser } from '../../src/db/migrate';
 
 const LEAD = JSON.stringify({
   name: 'Jane',
@@ -28,13 +27,7 @@ const TEST_EMAIL = 'testuser@example.com';
 const TEST_PASSWORD = 'test-password-123';
 
 async function seedTestUser(): Promise<void> {
-  migrate();
-  const svc = new BcryptAuthService();
-  try {
-    await svc.register(TEST_EMAIL, TEST_PASSWORD);
-  } catch {
-    // Already exists from a previous test run — that's fine.
-  }
+  await seedDemoUser();
 }
 
 function buildTestApp(): { app: Express; root: string } {
@@ -59,24 +52,10 @@ function buildTestApp(): { app: Express; root: string } {
 }
 
 /**
- * Get a CSRF token from the login page (public route — no auth needed).
- */
-async function getLoginCsrf(agent: request.SuperAgentTest): Promise<string> {
-  const res = await agent.get('/auth/login');
-  return /name="csrf-token" content="([^"]+)"/.exec(res.text)?.[1] ?? '';
-}
-
-/**
  * Login the agent as the test user and return the post-login CSRF token.
  */
 async function loginAgent(agent: request.SuperAgentTest): Promise<string> {
-  const token = await getLoginCsrf(agent);
-  await agent
-    .post('/auth/login')
-    .set('X-CSRF-Token', token)
-    .send(
-      `_csrf=${encodeURIComponent(token)}&email=${encodeURIComponent(TEST_EMAIL)}&password=${encodeURIComponent(TEST_PASSWORD)}`,
-    );
+  await agent.post('/api/auth/sign-in/email').send({ email: TEST_EMAIL, password: TEST_PASSWORD });
   // After login, get a fresh CSRF token from a protected page
   const home = await agent.get('/');
   return /name="csrf-token" content="([^"]+)"/.exec(home.text)?.[1] ?? '';
@@ -249,26 +228,13 @@ describe('web core (supertest)', () => {
   });
 
   it('should isolate sessions from each other (F-16)', async () => {
-    // Alice and Bob register separate accounts for true isolation
-    const svc = new BcryptAuthService();
-    await svc.register('alice-iso@example.com', 'alice-pass-123').catch(() => {
-      /* already exists */
-    });
-    await svc.register('bob-iso@example.com', 'bob-pass-123').catch(() => {
-      /* already exists */
-    });
-
     const alice = request.agent(app);
     const bob = request.agent(app);
 
     // Alice logs in
-    const aliceCsrf1 = await getLoginCsrf(alice);
     await alice
-      .post('/auth/login')
-      .set('X-CSRF-Token', aliceCsrf1)
-      .send(
-        `_csrf=${encodeURIComponent(aliceCsrf1)}&email=alice-iso%40example.com&password=alice-pass-123`,
-      );
+      .post('/api/auth/sign-in/email?user=alice')
+      .send({ email: 'alice-iso@example.com', password: 'alice-pass-123' });
     const aliceHome = await alice.get('/');
     const aliceToken = /name="csrf-token" content="([^"]+)"/.exec(aliceHome.text)?.[1] ?? '';
 
@@ -280,13 +246,9 @@ describe('web core (supertest)', () => {
     await waitForJob(alice, jobId);
 
     // Bob logs in separately
-    const bobCsrf1 = await getLoginCsrf(bob);
     await bob
-      .post('/auth/login')
-      .set('X-CSRF-Token', bobCsrf1)
-      .send(
-        `_csrf=${encodeURIComponent(bobCsrf1)}&email=bob-iso%40example.com&password=bob-pass-123`,
-      );
+      .post('/api/auth/sign-in/email?user=bob')
+      .send({ email: 'bob-iso@example.com', password: 'bob-pass-123' });
 
     // Bob sees an empty queue/history and cannot read Alice's job or results
     expect((await bob.get('/api/queue')).body.jobs).toHaveLength(0);

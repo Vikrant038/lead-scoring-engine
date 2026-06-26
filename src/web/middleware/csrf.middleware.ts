@@ -18,7 +18,11 @@ export const ensureCsrfToken: RequestHandler = (req, res, next) => {
 };
 
 export const verifyCsrf: RequestHandler = (req, _res, next) => {
-  if (!MUTATING_METHODS.has(req.method)) {
+  if (
+    !MUTATING_METHODS.has(req.method) ||
+    req.path.startsWith('/api/auth') ||
+    req.originalUrl.startsWith('/api/auth')
+  ) {
     return next();
   }
   const header = req.headers['x-csrf-token'];

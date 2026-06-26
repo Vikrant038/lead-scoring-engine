@@ -112,16 +112,16 @@ document.addEventListener('DOMContentLoaded', () => {
       opt.setAttribute('aria-selected', isSel ? 'true' : 'false');
       const span = opt.querySelector('span');
       if (isSel) {
-        span.classList.add('font-semibold', 'text-[#0029ff]');
+        span.classList.add('font-semibold', 'text-[#0029ff]', 'dark:text-blue-400');
         span.classList.remove('font-normal');
         if (!opt.querySelector('.check-icon')) {
           const check = document.createElement('span');
-          check.className = 'check-icon absolute inset-y-0 right-0 flex items-center pr-3 text-[#0029ff]';
+          check.className = 'check-icon absolute inset-y-0 right-0 flex items-center pr-3 text-[#0029ff] dark:text-blue-400';
           check.innerHTML = `<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
           opt.appendChild(check);
         }
       } else {
-        span.classList.remove('font-semibold', 'text-[#0029ff]');
+        span.classList.remove('font-semibold', 'text-[#0029ff]', 'dark:text-blue-400');
         span.classList.add('font-normal');
         const check = opt.querySelector('.check-icon');
         if (check) opt.removeChild(check);

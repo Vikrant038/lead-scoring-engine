@@ -1,11 +1,11 @@
-AGENTS.md â Lead Scoring Engine (ICP Profiler)
+AGENTS.md â€” Lead Scoring Engine (ICP Profiler)
 > High-signal guidance for agents working in this repo. Every line answers: "Would an agent likely miss this without help?"
 ---
 ## Project Identity
-- **Name:** `lead-scoring-engine` â multi-user ICP Profiler (batch CLI, web app, self-demo)
-- **Stack:** TypeScript (strict) Â· Express + EJS + Multer 2.x Â· Zod (single source of truth) Â· pino (PII redaction) Â· Tailwind Â· Gemini/OpenAI with rule-based fallback Â· Jest (unit+integration, **per-file coverage gate**) Â· Playwright (E2E) Â· ESLint/Prettier/Husky/Gitleaks
-- **No database** â all state is JSON/CSV on disk, partitioned per session (`data/sessions/{sessionId}/`)
-- **Risk tier:** Commercial/Production â all standards are mandatory
+- **Name:** `lead-scoring-engine` â€” multi-user ICP Profiler (batch CLI, web app, self-demo)
+- **Stack:** TypeScript (strict) Â· Express + EJS + Multer 2.x Â· Better Auth + Drizzle ORM (SQLite) Â· Zod (single source of truth) Â· pino (PII redaction) Â· Tailwind Â· Gemini/OpenAI with rule-based fallback Â· Jest (unit+integration, **per-file coverage gate**) Â· Playwright (E2E) Â· ESLint/Prettier/Husky/Gitleaks
+- **Database & Storage:** SQLite (`data/icp.db`) via Better Auth for user identity and sessions; job files are JSON/CSV on disk partitioned per user (`data/sessions/{userId}/`)
+- **Risk tier:** Commercial/Production â€” all standards are mandatory
 ---
 
 Exact Developer Commands
@@ -19,35 +19,36 @@ npm run dev:server            # web app at http://localhost:3000
 npm run demo                  # self-demo (generates leads + scores); --no-ai, --persona, --count
 # Quality gates (run in this order locally)
 npm run typecheck             # tsc --noEmit (strict)
-npm run lint                  # ESLint â enforces global prohibitions (no any, no console, etc.)
+npm run lint                  # ESLint â€” enforces global prohibitions (no any, no console, etc.)
 npm test -- --coverage        # Jest unit + integration; **per-file coverage gate**
 npm run test:e2e              # Playwright top-5 journeys (boots live server)
 # CSS (Tailwind)
 npm run build:css             # builds public/css/app.css
-CI order (enforced in .github/workflows/ci.yml): typecheck â lint â test --coverage
+CI order (enforced in .github/workflows/ci.yml): typecheck â†’ lint â†’ test --coverage
 ---
 Entry Points (Three Ways In)
 Mode	File	Purpose
 CLI	src/cli/index.ts	Batch-score ./input; writes results, summary, CSV
-Web	src/web/server.ts	Express app â drag-and-drop, history, personas, config, email settings
+Web	src/web/server.ts	Express app â€” drag-and-drop, history, personas, config, email settings
 Demo	demo.ts	Self-contained showcase; --no-ai, --persona, --count, --output
 ---
 Architecture (Must Know)
 Scoring Pipeline (Uni-directional)
-Data Quality â Education â Experience â Thinking Quality â Scorer â Profiler
+Data Quality â†’ Education â†’ Experience â†’ Thinking Quality â†’ Scorer â†’ Profiler
    (gate)        (0.20)       (0.35)           (0.40)          (+recency)  (assemble)
 - Data Quality is a gate: profiles below threshold are rejected, not scored
 - Weights live in config (src/config/config.schema.ts), editable via web Config Editor
 - AI is optional: NullProvider activates when no key; all consumers check llm.available and fall back
 Layered Web Flow
-Route â Controller â Service â Repository â filesystem
+Route â†’ Controller â†’ Service â†’ Repository â†’ filesystem
 - Controllers: skinny (parse, call service, map to HTTP)
 - Services: business logic + cross-cutting concerns
 - Repositories: only touch storage
-- Errors: typed DomainError hierarchy â single global handler â generic envelope (correlation ID logged, never leaked)
-Multi-User Isolation (No DB)
-1. Session silos: data/sessions/{sessionId}/{input,output} â routes only resolve inside caller's silo
-2. Path guard: resolveWithin in src/lib/security/path-guard.ts â rejects any path escaping intended root
+- Errors: typed DomainError hierarchy â†’ single global handler â†’ generic envelope (correlation ID logged, never leaked)
+Multi-User Isolation (Better Auth + Storage Silos)
+1. User identity: Managed by Better Auth (`/api/auth/*`) backed by SQLite (`data/icp.db`). Express-session retained strictly for CSRF tokens (`icp.sid`).
+2. Session silos: `data/sessions/{userId}/{input,output}` â€” routes only resolve inside caller's user silo.
+3. Path guard: `resolveWithin` in `src/lib/security/path-guard.ts` â€” rejects any path escaping intended root.
 AI Abstraction (Strategy Pattern)
 interface LLMClient {
   readonly available: boolean;
@@ -99,7 +100,7 @@ tests/
 docs/
   ARCHITECTURE.md  # design thinking, decisions, process, traceability
   DEPLOYMENT.md    # production deploy/run
-  architecture/    # ADRs (adr-001..005)
+  architecture/    # ADRs (adr-001..006)
 ---
 Gotchas & Operational Notes
 Issue	Detail

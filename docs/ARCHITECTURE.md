@@ -116,23 +116,16 @@ logged with a correlation id, never leaked to the client. (See
 
 ---
 
-## 6. Multi-user isolation without a database
+## 6. Multi-user isolation (Better Auth + Storage Silos)
 
-A hard constraint from the spec: **no database.** State is files. The risk that creates is obvious —
-how do you stop one user reading another's data, or escaping the data directory entirely?
+User authentication and sessions are managed by **Better Auth** backed by a local SQLite database (`data/icp.db`) using Drizzle ORM. While user identity is stored in SQLite, scoring job artifacts are stored on disk. The risk that creates is obvious — how do you stop one user reading another's data, or escaping the data directory entirely?
 
 The answer is two-layered:
 
-1. **Session silos.** Each browser session gets `data/sessions/{sessionId}/{input,output}`. The
-   history, download, and clear-data routes only ever resolve paths inside the caller's own silo. A
-   second browser sees an empty queue and an empty history — provably, in an E2E test.
-2. **A path-guard (`resolveWithin`).** Every filename derived from user input (upload names, record
-   ids, session ids, persona ids) passes through a guard that resolves the path and rejects anything
-   landing outside the intended root. A cookie crafted with `../../etc` cannot escape the sessions
-   directory.
+1. **User Silos.** Each authenticated user gets `data/sessions/{userId}/{input,output}`. The history, download, and clear-data routes only ever resolve paths inside the caller's own user silo. A second user sees an empty queue and an empty history — provably, in our Supertest integration and E2E suites. Existing `express-session` is retained strictly for CSRF tokens (`icp.sid`), separating user authentication state into Better Auth sessions (`better-auth.sid`).
+2. **A path-guard (`resolveWithin`).** Every filename derived from user input (upload names, record ids, user ids, persona ids) passes through a guard that resolves the path and rejects anything landing outside the intended root. A request crafted with `../../etc` cannot escape the sessions directory.
 
-This is the Principle of Least Privilege applied to the filesystem: the only bytes a request can
-reach are the ones it owns.
+This is the Principle of Least Privilege applied to the filesystem: the only bytes a request can reach are the ones it owns.
 
 ---
 

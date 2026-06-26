@@ -44,7 +44,8 @@ export const regenerateEmailController =
   (ctx: WebContext): RequestHandler =>
   async (req, res, next) => {
     try {
-      const dirs = ctx.sessionStore.ensure(req.session.userId!);
+      const userId = req.user!.id;
+      const dirs = ctx.sessionStore.ensure(userId);
       const fileHandler = new FileHandlerRepository(dirs, ctx.logger);
       const result = fileHandler.readResult(req.params.recordId);
       const sourceFile = result._sourceFile;
@@ -69,7 +70,8 @@ export const exportEmailsController =
   (ctx: WebContext): RequestHandler =>
   (req, res, next) => {
     try {
-      const dirs = ctx.sessionStore.ensure(req.session.userId!);
+      const userId = req.user!.id;
+      const dirs = ctx.sessionStore.ensure(userId);
       const results = new FileHandlerRepository(dirs, ctx.logger).listResults();
       const blocks = results
         .filter((r) => r.outreach_email)
@@ -93,7 +95,8 @@ export const clearDataController =
   (ctx: WebContext): RequestHandler =>
   (req, res, next) => {
     try {
-      ctx.sessionStore.clear(req.session.userId!);
+      const userId = req.user!.id;
+      ctx.sessionStore.clear(userId);
       req.session.selectedPersona = undefined;
       req.session.emailSettings = undefined;
       res.json({ success: true });

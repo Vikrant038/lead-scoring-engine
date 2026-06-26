@@ -3,6 +3,12 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
+  moduleNameMapper: {
+    '^better-auth$': '<rootDir>/tests/mocks/better-auth.mock.ts',
+    '^better-auth/node$': '<rootDir>/tests/mocks/better-auth.mock.ts',
+    '^better-auth/crypto$': '<rootDir>/tests/mocks/better-auth.mock.ts',
+    '^better-auth/adapters/drizzle$': '<rootDir>/tests/mocks/better-auth.mock.ts',
+  },
   // Exclude type-only definition files and root demo script.
   collectCoverageFrom: [
     'src/**/*.ts',
@@ -21,12 +27,24 @@ module.exports = {
       displayName: 'unit',
       preset: 'ts-jest',
       testEnvironment: 'node',
+      moduleNameMapper: {
+        '^better-auth$': '<rootDir>/tests/mocks/better-auth.mock.ts',
+        '^better-auth/node$': '<rootDir>/tests/mocks/better-auth.mock.ts',
+        '^better-auth/crypto$': '<rootDir>/tests/mocks/better-auth.mock.ts',
+        '^better-auth/adapters/drizzle$': '<rootDir>/tests/mocks/better-auth.mock.ts',
+      },
       testMatch: ['<rootDir>/tests/unit/**/*.test.ts', '<rootDir>/src/**/*.test.ts'],
     },
     {
       displayName: 'integration',
       preset: 'ts-jest',
       testEnvironment: 'node',
+      moduleNameMapper: {
+        '^better-auth$': '<rootDir>/tests/mocks/better-auth.mock.ts',
+        '^better-auth/node$': '<rootDir>/tests/mocks/better-auth.mock.ts',
+        '^better-auth/crypto$': '<rootDir>/tests/mocks/better-auth.mock.ts',
+        '^better-auth/adapters/drizzle$': '<rootDir>/tests/mocks/better-auth.mock.ts',
+      },
       testMatch: ['<rootDir>/tests/integration/**/*.test.ts'],
     },
   ],

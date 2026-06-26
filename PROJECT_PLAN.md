@@ -1,7 +1,7 @@
 # PROJECT_PLAN.md — Lead Scoring Engine (ICP Profiler)
 
-**Status:** Phase 1 (Architecture Plan) — awaiting approval before scaffold (Phase 2).
-**Date:** 2026-06-21
+**Status:** Better Auth Migration (Phase 1 Complete) — 100% test coverage gate cleared.
+**Date:** 2026-06-25
 
 ## 0. Binding decisions (from Phase 0 sign-off)
 
@@ -19,7 +19,7 @@
 ## 1. Tech stack
 
 - **Runtime/lang:** Node.js ≥18, **TypeScript** (strict), compiled to **CommonJS** (`tsc`); dev via `tsx`.
-- **Web:** Express 4, EJS views, **Multer 2.x** (1.x is deprecated/vulnerable — GUARDRAILS 6.2), `express-session` (cookie `HttpOnly`+`Secure`+`SameSite=Strict`).
+- **Web:** Express 4, EJS views, **Multer 2.x** (1.x is deprecated/vulnerable — GUARDRAILS 6.2), **Better Auth + Drizzle ORM (SQLite)** for user authentication (`/api/auth/*`), `express-session` (strictly for CSRF synchronizer tokens).
 - **Security:** `helmet` (GUARDRAILS 2.8), **custom synchronizer-token CSRF** middleware backed by session (GUARDRAILS 2.5 — avoids deprecated `csurf`), `path.basename` path-guard (SEC-05/06).
 - **Validation:** **Zod** schemas as single source of truth (CODING 1.10) for profiles, personas, config, email-settings, upload.
 - **Logging:** **pino** structured logger with redaction array + `correlationId` + `durationMs` (GUARDRAILS 6.4 / CODING 4.7).

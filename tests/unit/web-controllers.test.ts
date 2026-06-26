@@ -85,7 +85,24 @@ function mockRes(): MockRes {
 }
 
 function req(overrides: Partial<Request> & { session?: Record<string, unknown> }): Request {
-  return { session: {}, sessionID: 's1', params: {}, query: {}, body: {}, ...overrides } as Request;
+  const sessionObj = overrides.session ?? {};
+  const userId = (sessionObj as any).userId ?? 's1';
+  return {
+    session: {},
+    sessionID: 's1',
+    params: {},
+    query: {},
+    body: {},
+    user: {
+      id: userId,
+      name: 'Test User',
+      email: 'test@example.com',
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    ...overrides,
+  } as Request;
 }
 
 describe('web controllers (unit)', () => {
