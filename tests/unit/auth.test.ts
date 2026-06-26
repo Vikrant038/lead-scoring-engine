@@ -115,6 +115,14 @@ describe('db/migrate', () => {
       | undefined;
     expect(row?.email).toBe('demo@example.com');
 
+    // Verify account uses the correct Better Auth credential provider ID
+    const acct = memDb
+      .prepare(
+        "SELECT providerId FROM account WHERE userId = (SELECT id FROM user WHERE email = 'demo@example.com')",
+      )
+      .get() as { providerId: string } | undefined;
+    expect(acct?.providerId).toBe('credential');
+
     // second call must not throw (idempotent)
     await expect(seedDemoUser()).resolves.toBeUndefined();
     const count = (

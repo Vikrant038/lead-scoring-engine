@@ -58,10 +58,10 @@
       }
     </style>
   </head>
-  <body class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-150" data-selected-persona="<%= selectedPersona %>">
+  <body class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-150 flex flex-col min-h-screen" data-selected-persona="<%= selectedPersona %>">
     <%- include('partials/header', { activePersonaName: activePersonaName, csrfToken: csrfToken, cspNonce: typeof cspNonce !== 'undefined' ? cspNonce : '' }) %>
     
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
       
       <!-- Top Action Bar -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">

@@ -61,7 +61,9 @@ export async function seedDemoUser(): Promise<void> {
   migrate();
   const existing = sqlite.prepare('SELECT id FROM user WHERE email = ?').get('demo@example.com');
   if (!existing) {
-    // Import dynamically so better-auth is loaded after npm install
+    // Use Better Auth's crypto to produce the exact hash format it expects.
+    // providerId must be 'credential' — that is what Better Auth's email/password
+    // plugin stores when a user signs up via signUpEmail.
     const { hashPassword } = await import('better-auth/crypto');
     const now = new Date();
     const userId = randomUUID();
@@ -82,8 +84,9 @@ export async function seedDemoUser(): Promise<void> {
     db.insert(account)
       .values({
         id: accountId_row,
-        accountId: 'demo@example.com',
-        providerId: 'email',
+        // Better Auth email/password plugin stores accountId = userId, providerId = 'credential'
+        accountId: userId,
+        providerId: 'credential',
         userId: userId,
         password: hashed,
         createdAt: now,

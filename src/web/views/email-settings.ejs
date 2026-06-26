@@ -14,7 +14,7 @@
       }
     </style>
   </head>
-  <body class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-150">
+  <body class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-150 flex flex-col min-h-screen">
     <%- include('partials/header') %>
     
     <%
@@ -23,7 +23,7 @@
       const hasBanner = typeof isDefault !== 'undefined' ? isDefault : false;
     %>
 
-    <main class="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <main class="flex-1 max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-16">
       
       <!-- Card Container -->
       <div class="relative bg-white dark:bg-gray-900 border border-gray-250/80 dark:border-gray-800 rounded-3xl p-8 shadow-sm overflow-hidden">
