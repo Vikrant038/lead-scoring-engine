@@ -5,7 +5,7 @@
  *    loginPostController, registerPostController, logoutController)
  *
  * Uses an in-memory SQLite database to keep tests fast and isolated.
- * Better Auth's API methods are mocked so no real network calls are made.
+ * global.fetch is mocked to intercept Better Auth REST calls.
  */
 import Database from 'better-sqlite3';
 import type { Request, Response } from 'express';
@@ -14,7 +14,6 @@ import type { Request, Response } from 'express';
 
 const memDb = new Database(':memory:');
 
-// Replace the SQLite singleton with the in-memory DB before any modules load.
 jest.mock('../../src/db/connection', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { drizzle } = require('drizzle-orm/better-sqlite3');
@@ -25,14 +24,11 @@ jest.mock('../../src/db/connection', () => {
   };
 });
 
-// Mock Better Auth so POST controllers don't make real HTTP requests
+// Mock Better Auth auth instance (used only in logoutController for getSession)
 jest.mock('../../src/lib/auth/auth', () => ({
   auth: {
     api: {
       getSession: jest.fn().mockResolvedValue(null),
-      signInEmail: jest.fn(),
-      signUpEmail: jest.fn(),
-      signOut: jest.fn(),
     },
   },
 }));
@@ -47,7 +43,6 @@ import {
   registerPostController,
   logoutController,
 } from '../../src/web/controllers/auth.controller';
-import { auth } from '../../src/lib/auth/auth';
 
 // ─── Helper factories ─────────────────────────────────────────────────────────
 
@@ -76,11 +71,11 @@ interface MockResState {
   rendered: { view: string; data: Record<string, unknown> } | null;
   redirected: string | null;
   status?: number;
-  cookies: Record<string, string>;
+  headers: Record<string, string | string[]>;
 }
 
 function makeRes(localsOverride?: Record<string, unknown>): { res: Response; state: MockResState } {
-  const state: MockResState = { rendered: null, redirected: null, cookies: {} };
+  const state: MockResState = { rendered: null, redirected: null, headers: {} };
   const res = {
     locals: { csrfToken: 'csrf-tok', cspNonce: 'nonce', ...localsOverride },
     render(view: string, data: Record<string, unknown>) {
@@ -93,11 +88,21 @@ function makeRes(localsOverride?: Record<string, unknown>): { res: Response; sta
       state.status = code;
       return this;
     },
-    setHeader(name: string, value: string) {
-      state.cookies[name] = value;
+    setHeader(name: string, value: string | string[]) {
+      state.headers[name] = value;
     },
   } as unknown as Response;
   return { res, state };
+}
+
+// ─── Mock fetch ───────────────────────────────────────────────────────────────
+
+function mockFetch(ok: boolean, body: Record<string, unknown> = {}, setCookie?: string) {
+  global.fetch = jest.fn().mockResolvedValueOnce({
+    ok,
+    json: async () => body,
+    headers: { get: (h: string) => (h === 'set-cookie' ? (setCookie ?? null) : null) },
+  } as unknown as globalThis.Response);
 }
 
 // ─── db/migrate ──────────────────────────────────────────────────────────────
@@ -108,7 +113,7 @@ describe('db/migrate', () => {
     expect(() => migrate()).not.toThrow();
   });
 
-  it('seedDemoUser() inserts demo@example.com and skips on second call', async () => {
+  it('seedDemoUser() inserts demo@example.com with credential providerId', async () => {
     await seedDemoUser();
     const row = memDb.prepare('SELECT email FROM user WHERE email = ?').get('demo@example.com') as
       | { email: string }
@@ -181,33 +186,28 @@ describe('registerPageController', () => {
 // ─── loginPostController ─────────────────────────────────────────────────────
 
 describe('loginPostController', () => {
-  const mockSignIn = auth.api.signInEmail as jest.MockedFunction<typeof auth.api.signInEmail>;
+  afterEach(() => {
+    delete (global as Record<string, unknown>).fetch;
+  });
 
-  beforeEach(() => mockSignIn.mockReset());
-
-  it('redirects to login with error if email or password missing', async () => {
+  it('redirects to login with error if email missing', async () => {
     const req = makeReq({ body: { email: '' } });
     const { res, state } = makeRes();
     await loginPostController(req, res, jest.fn());
     expect(state.redirected).toContain('/auth/login?error=');
   });
 
-  it('redirects to / on successful sign-in', async () => {
-    mockSignIn.mockResolvedValueOnce({
-      ok: true,
-      headers: { get: () => 'better-auth.sid=abc' },
-    } as unknown as Response);
+  it('redirects to / on successful sign-in and forwards cookie', async () => {
+    mockFetch(true, {}, 'better-auth.sid=abc; Path=/; HttpOnly');
     const req = makeReq({ body: { email: 'a@b.com', password: 'pass' } });
     const { res, state } = makeRes();
     await loginPostController(req, res, jest.fn());
     expect(state.redirected).toBe('/');
+    expect(state.headers['Set-Cookie']).toBeTruthy();
   });
 
-  it('redirects to returnTo URL stored in session', async () => {
-    mockSignIn.mockResolvedValueOnce({
-      ok: true,
-      headers: { get: () => null },
-    } as unknown as Response);
+  it('redirects to returnTo URL in session', async () => {
+    mockFetch(true, {});
     const req = makeReq({
       body: { email: 'a@b.com', password: 'pass' },
       session: { returnTo: '/history', destroy: jest.fn((cb: () => void) => cb()) },
@@ -217,20 +217,17 @@ describe('loginPostController', () => {
     expect(state.redirected).toBe('/history');
   });
 
-  it('redirects to login with error on failed sign-in', async () => {
-    mockSignIn.mockResolvedValueOnce({
-      ok: false,
-      json: async () => ({ message: 'Invalid email or password' }),
-      headers: { get: () => null },
-    } as unknown as Response);
+  it('redirects to login with server error message on failed sign-in', async () => {
+    mockFetch(false, { message: 'Invalid email or password' });
     const req = makeReq({ body: { email: 'bad@b.com', password: 'wrong' } });
     const { res, state } = makeRes();
     await loginPostController(req, res, jest.fn());
     expect(state.redirected).toContain('/auth/login?error=');
+    expect(state.redirected).toContain('Invalid');
   });
 
-  it('redirects to login with error if signInEmail throws', async () => {
-    mockSignIn.mockRejectedValueOnce(new Error('network fail'));
+  it('redirects to login with generic error if fetch throws', async () => {
+    global.fetch = jest.fn().mockRejectedValueOnce(new Error('network fail'));
     const req = makeReq({ body: { email: 'a@b.com', password: 'pass' } });
     const { res, state } = makeRes();
     await loginPostController(req, res, jest.fn());
@@ -241,42 +238,36 @@ describe('loginPostController', () => {
 // ─── registerPostController ───────────────────────────────────────────────────
 
 describe('registerPostController', () => {
-  const mockSignUp = auth.api.signUpEmail as jest.MockedFunction<typeof auth.api.signUpEmail>;
+  afterEach(() => {
+    delete (global as Record<string, unknown>).fetch;
+  });
 
-  beforeEach(() => mockSignUp.mockReset());
-
-  it('redirects to register with error if email or password missing', async () => {
+  it('redirects to register with error if email missing', async () => {
     const req = makeReq({ body: { email: '' } });
     const { res, state } = makeRes();
     await registerPostController(req, res, jest.fn());
     expect(state.redirected).toContain('/auth/register?error=');
   });
 
-  it('redirects to / on successful registration', async () => {
-    mockSignUp.mockResolvedValueOnce({
-      ok: true,
-      headers: { get: () => null },
-    } as unknown as Response);
+  it('redirects to / on successful registration and forwards cookie', async () => {
+    mockFetch(true, {}, 'better-auth.sid=xyz; Path=/; HttpOnly');
     const req = makeReq({ body: { email: 'new@b.com', password: 'pass123', name: 'Test' } });
     const { res, state } = makeRes();
     await registerPostController(req, res, jest.fn());
     expect(state.redirected).toBe('/');
+    expect(state.headers['Set-Cookie']).toBeTruthy();
   });
 
   it('redirects to register with error on failed registration', async () => {
-    mockSignUp.mockResolvedValueOnce({
-      ok: false,
-      json: async () => ({ message: 'Email already in use' }),
-      headers: { get: () => null },
-    } as unknown as Response);
+    mockFetch(false, { message: 'Email already in use' });
     const req = makeReq({ body: { email: 'a@b.com', password: 'pass' } });
     const { res, state } = makeRes();
     await registerPostController(req, res, jest.fn());
     expect(state.redirected).toContain('/auth/register?error=');
   });
 
-  it('redirects to register with error if signUpEmail throws', async () => {
-    mockSignUp.mockRejectedValueOnce(new Error('network fail'));
+  it('redirects to register with error if fetch throws', async () => {
+    global.fetch = jest.fn().mockRejectedValueOnce(new Error('network fail'));
     const req = makeReq({ body: { email: 'a@b.com', password: 'pass' } });
     const { res, state } = makeRes();
     await registerPostController(req, res, jest.fn());
@@ -287,7 +278,12 @@ describe('registerPostController', () => {
 // ─── logoutController ─────────────────────────────────────────────────────────
 
 describe('logoutController', () => {
+  afterEach(() => {
+    delete (global as Record<string, unknown>).fetch;
+  });
+
   it('destroys session and redirects to /auth/login', async () => {
+    mockFetch(true, {});
     const destroyFn = jest.fn((cb: () => void) => cb());
     const req = makeReq({ session: { destroy: destroyFn } });
     const { res, state } = makeRes();
@@ -300,17 +296,15 @@ describe('logoutController', () => {
 // ─── auth controller defensive branches ─────────────────────────────────────
 
 describe('auth controller defensive branches', () => {
-  it('handles missing cspNonce in login page and register page', () => {
+  it('handles missing cspNonce in login and register pages', () => {
     const resNoNonce = { csrfToken: 'csrf-tok', cspNonce: undefined };
 
-    // 1. login page
     {
       const req = makeReq({ user: null, query: {} });
       const { res, state } = makeRes(resNoNonce);
       loginPageController(req, res, jest.fn());
       expect(state.rendered?.data.cspNonce).toBe('');
     }
-    // 2. register page
     {
       const req = makeReq({ user: null, query: {} });
       const { res, state } = makeRes(resNoNonce);

@@ -1,13 +1,19 @@
 /**
  * Auth view controllers (Phase 1 & Phase 2 Better Auth).
  * Renders login and register pages and bridges HTML form submissions to
- * Better Auth's REST API (/api/auth/*). Because the browser submits a
- * traditional HTML form we proxy the call server-side, forward the
- * Set-Cookie headers back to the client, then redirect on success.
+ * Better Auth's REST API via fetch().
+ *
+ * WHY fetch() instead of auth.api.*:
+ * Better Auth's server-side handler (auth.api.signInEmail) requires
+ * Request-like context including proper headers. Calling it directly from
+ * an Express handler without those headers causes schema-lookup errors.
+ * Using fetch() against Better Auth's own HTTP endpoint is the simplest,
+ * most reliable approach: it handles cookies, CORS, and schema lookups
+ * exactly as it would for a browser client.
  */
 import type { RequestHandler } from 'express';
 import { auth } from '../../lib/auth/auth';
-import { toNodeHandler } from 'better-auth/node';
+import { fromNodeHeaders } from 'better-auth/node';
 
 // ── View controllers ────────────────────────────────────────────────────────
 
@@ -41,12 +47,18 @@ export const registerPageController: RequestHandler = (req, res) => {
   });
 };
 
-// ── Form-submit handlers (bridge HTML form → Better Auth REST API) ──────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function authBaseUrl(): string {
+  return process.env.BETTER_AUTH_URL ?? 'http://localhost:3000';
+}
+
+// ── Form-submit handlers ────────────────────────────────────────────────────
 
 /**
  * POST /auth/login
- * Calls Better Auth's sign-in/email endpoint, forwards the session cookie
- * from Better Auth to the browser, and redirects to the app home on success.
+ * Proxies to Better Auth's /api/auth/sign-in/email endpoint via HTTP fetch,
+ * forwarding the resulting session cookie back to the browser.
  */
 export const loginPostController: RequestHandler = async (req, res) => {
   const { email, password } = req.body as { email?: string; password?: string };
@@ -56,9 +68,14 @@ export const loginPostController: RequestHandler = async (req, res) => {
   }
 
   try {
-    const authRes = await auth.api.signInEmail({
-      body: { email, password },
-      asResponse: true,
+    const authRes = await fetch(`${authBaseUrl()}/api/auth/sign-in/email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Forward the browser's cookies so Better Auth can set up the session
+        ...(req.headers.cookie ? { cookie: req.headers.cookie } : {}),
+      },
+      body: JSON.stringify({ email, password }),
     });
 
     if (!authRes.ok) {
@@ -67,20 +84,17 @@ export const loginPostController: RequestHandler = async (req, res) => {
         const data = (await authRes.json()) as { message?: string };
         if (data.message) message = data.message;
       } catch {
-        // ignore parse failure
+        // ignore parse error
       }
       return res.redirect(`/auth/login?error=${encodeURIComponent(message)}`);
     }
 
-    // Forward Better Auth session cookie(s) to the browser
+    // Forward the session cookie Better Auth set
     const setCookie = authRes.headers.get('set-cookie');
-    if (setCookie) {
-      res.setHeader('Set-Cookie', setCookie);
-    }
+    if (setCookie) res.setHeader('Set-Cookie', setCookie);
 
     const returnTo = typeof req.session?.returnTo === 'string' ? req.session.returnTo : '/';
     if (req.session?.returnTo) delete req.session.returnTo;
-
     return res.redirect(returnTo);
   } catch {
     return res.redirect('/auth/login?error=An+unexpected+error+occurred');
@@ -89,8 +103,7 @@ export const loginPostController: RequestHandler = async (req, res) => {
 
 /**
  * POST /auth/register
- * Calls Better Auth's sign-up/email endpoint, forwards the session cookie
- * from Better Auth to the browser, and redirects to the app home on success.
+ * Proxies to Better Auth's /api/auth/sign-up/email endpoint via HTTP fetch.
  */
 export const registerPostController: RequestHandler = async (req, res) => {
   const { email, password, name } = req.body as {
@@ -104,9 +117,13 @@ export const registerPostController: RequestHandler = async (req, res) => {
   }
 
   try {
-    const authRes = await auth.api.signUpEmail({
-      body: { email, password, name: name ?? email },
-      asResponse: true,
+    const authRes = await fetch(`${authBaseUrl()}/api/auth/sign-up/email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(req.headers.cookie ? { cookie: req.headers.cookie } : {}),
+      },
+      body: JSON.stringify({ email, password, name: name ?? email }),
     });
 
     if (!authRes.ok) {
@@ -115,16 +132,13 @@ export const registerPostController: RequestHandler = async (req, res) => {
         const data = (await authRes.json()) as { message?: string };
         if (data.message) message = data.message;
       } catch {
-        // ignore parse failure
+        // ignore parse error
       }
       return res.redirect(`/auth/register?error=${encodeURIComponent(message)}`);
     }
 
-    // Forward Better Auth session cookie(s) to the browser
     const setCookie = authRes.headers.get('set-cookie');
-    if (setCookie) {
-      res.setHeader('Set-Cookie', setCookie);
-    }
+    if (setCookie) res.setHeader('Set-Cookie', setCookie);
 
     return res.redirect('/');
   } catch {
@@ -134,23 +148,25 @@ export const registerPostController: RequestHandler = async (req, res) => {
 
 /**
  * GET /auth/logout
- * Signs out via Better Auth, clears the session, and redirects to login.
+ * Signs out via Better Auth's REST API, destroys the CSRF session, redirects.
  */
 export const logoutController: RequestHandler = async (req, res) => {
   try {
-    await auth.api.signOut({
-      headers: req.headers as Record<string, string>,
-      asResponse: true,
-    });
+    const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
+    if (session) {
+      await fetch(`${authBaseUrl()}/api/auth/sign-out`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(req.headers.cookie ? { cookie: req.headers.cookie } : {}),
+        },
+      });
+    }
   } catch {
-    // best-effort sign-out
+    // best-effort
   }
 
-  // Also destroy the CSRF express-session
   req.session.destroy(() => {
     res.redirect('/auth/login');
   });
 };
-
-// Re-export the Better Auth node handler for /api/auth/* routes
-export const betterAuthHandler = toNodeHandler(auth);
