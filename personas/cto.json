@@ -1,0 +1,31 @@
+{
+  "name": "CTO",
+  "description": "Marketing",
+  "weights": {
+    "education": 0.2,
+    "experience": 0.5,
+    "thinking": 0.3
+  },
+  "education": {
+    "preferred_tiers": [
+      "tier_1",
+      "tier_2"
+    ]
+  },
+  "experience": {
+    "roles_must_include": [
+      "CTO",
+      "Chief Technology Officer",
+      "VP Engineering"
+    ],
+    "preferred_companies_tiers": [
+      "tier_1"
+    ],
+    "min_years_experience": 8
+  },
+  "skills_must_have": [
+    "Architect",
+    "Scalability",
+    "System Design"
+  ]
+}
