@@ -227,7 +227,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const demoBatchCard = document.getElementById('demo-batch-card');
   const demoBatchBtn = document.getElementById('demo-batch-btn');
+
+  if (demoBatchCard) {
+    if (localStorage.getItem('demo_batch_run') === 'true') {
+      demoBatchCard.classList.add('hidden');
+    }
+  }
+
   if (demoBatchBtn) {
     demoBatchBtn.addEventListener('click', () => {
       runDemoBatch();
@@ -239,6 +247,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function runDemoBatch() {
     hideError();
+    if (demoBatchCard) {
+      demoBatchCard.classList.add('hidden');
+    }
+    localStorage.setItem('demo_batch_run', 'true');
+
     try {
       const statusContainer = document.getElementById('job-status-container');
       const filenameEl = document.getElementById('job-filename');
