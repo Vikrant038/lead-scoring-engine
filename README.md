@@ -40,10 +40,9 @@ data so you can see the whole thing work in one command.
 
 ## Stack
 
-TypeScript (strict) · Express + EJS + Multer 2.x · Zod (single source of truth for types) ·
+TypeScript (strict) · Express + EJS + Multer 2.x · Better Auth + Drizzle ORM (SQLite) · Zod (single source of truth) ·
 pino (structured logging with PII redaction) · Tailwind · Gemini / OpenAI with rule-based fallback ·
-Jest (unit + integration, per-file coverage gate) · Playwright (E2E) · ESLint / Prettier / Husky /
-Gitleaks. No database; all state is JSON/CSV on the filesystem, partitioned per session.
+Jest (unit + integration, per-file coverage gate) · Playwright (E2E) · ESLint / Prettier / Husky / Gitleaks.
 
 ## Quickstart
 
@@ -67,15 +66,11 @@ npm run demo -- --no-ai --html --count 10   # also writes demo-output/demo-repor
 
 ## Authentication
 
-The web app uses **session-based authentication** backed by SQLite. On first run a demo account is
-seeded automatically:
+The web app features secure multi-user authentication powered by **Better Auth** backed by **SQLite** (`data/icp.db`).
 
-| Email | Password |
-|-------|----------|
-| `demo@example.com` | `password` |
-
-Anyone can create their own account via the Register page. All data is isolated per user — one
-user cannot see or access another's uploaded leads or history.
+- **Email & Password Authentication:** Register and sign in directly via `/auth/register` and `/auth/login`.
+- **Google OAuth 2.0:** One-click single sign-on via Google OAuth integration (`AUTH_GOOGLE_CLIENT_ID` & `AUTH_GOOGLE_CLIENT_SECRET`).
+- **Complete User Isolation:** All lead files, job queues, and scoring histories are partitioned in per-user storage silos (`data/sessions/{userId}/`) protected by filesystem path guards.
 
 > **Production note:** Set `SESSION_SECRET` in your environment. Without it a random secret is
 > generated on each startup (sessions reset on restart). See [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md).

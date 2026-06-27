@@ -42,10 +42,10 @@ The system comprises:
   - A configuration editor (JSON).
   - Persona management (create, edit, delete, set active) and persona‑based lead matching.
   - AI‑powered features: ICP score explanation narrative, personalised outreach email draft, and a self‑demonstration mode.
-- **Multi‑user isolation** through session‑scoped file directories, ensuring each browser session sees only its own uploaded data and results.
+- **Multi‑user isolation** through session‑scoped file directories (`data/sessions/{userId}/`) and Better Auth authentication backed by SQLite (`data/icp.db`), ensuring each user session sees only its own uploaded data and results.
 - A **self‑demonstration CLI** (`npm run demo`) that generates fake leads and runs the full pipeline to showcase all features without any manual data entry.
 
-The system is designed to run entirely from local files; it requires no database, though session data is stored in memory (with optional file‑based session stores for persistence across restarts). All AI capabilities are optional and gracefully degrade to rule‑based logic when no LLM API key is provided.
+The system uses SQLite via Better Auth for user identity and authentication sessions, while lead job data is partitioned per user on disk. All AI capabilities are optional and gracefully degrade to rule‑based logic when no LLM API key is provided.
 
 ---
 
@@ -53,7 +53,7 @@ The system is designed to run entirely from local files; it requires no database
 
 ### 2.1 Product Perspective
 
-The Lead Scoring Engine is a standalone Node.js application. It can be installed on any system with Node.js ≥ 18. It does not integrate with external services except for optional AI APIs (Google Gemini or OpenAI) and optional persistent session stores. The web interface is a classic server‑rendered application using Express, EJS, and Multer; there is no separate frontend build step. All data is stored as plain JSON and CSV files on the server’s filesystem, partitioned per user session in multi‑user mode.
+The Lead Scoring Engine is a standalone Node.js application. It can be installed on any system with Node.js ≥ 18. It does not integrate with external services except for optional AI APIs (Google Gemini or OpenAI) and OAuth 2.0 social providers. The web interface is a classic server‑rendered application using Express, EJS, and Multer. All job data is stored as plain JSON and CSV files on the server’s filesystem, partitioned per user account in multi‑user mode.
 
 ### 2.2 Product Functions (High‑Level Summary)
 
