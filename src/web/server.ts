@@ -1,7 +1,8 @@
 /**
  * Express composition root (F-10..F-17). `createApp` assembles middleware + routes from a
  * WebContext; `buildContext` wires the shared services; `main` resolves env and listens.
- * Phase 1: DB migration + demo-user seed run on startup before listening.
+ * Phase 1: DB migration runs on startup; demo-user is seeded via Better Auth REST API
+ * after the server starts listening (ensures correct password hash format).
  */
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -25,7 +26,7 @@ import { createJobProcessor } from './services/job-processor';
 import { createRouter } from './routes/index.routes';
 import { DynamicLlmClient } from '../llm/dynamic-llm.client';
 import type { WebContext } from './context';
-import { migrate, seedDemoUser } from '../db/migrate';
+import { migrate, wipeStaleDemoUser, seedDemoUserViaApi } from '../db/migrate';
 import { auth } from '../lib/auth/auth';
 import { toNodeHandler, fromNodeHeaders } from 'better-auth/node';
 
@@ -112,9 +113,9 @@ async function main(): Promise<void> {
   };
   const logger = createLogger({ level: (env.LOG_LEVEL as LogLevel) ?? 'info' });
 
-  // Phase 1: run DB migration and seed demo user before accepting requests
+  // Phase 1: run DB migration and wipe any stale demo user before accepting requests
   migrate();
-  await seedDemoUser();
+  wipeStaleDemoUser();
   logger.info('database migration complete');
 
   let secret = env.SESSION_SECRET;
@@ -128,7 +129,16 @@ async function main(): Promise<void> {
   const port = Number(env.PORT ?? 3000);
   app.listen(
     port,
-    /* istanbul ignore next */ () => logger.info({ port }, 'ICP Profiler web server started'),
+    /* istanbul ignore next */
+    () => {
+      logger.info({ port }, 'ICP Profiler web server started');
+      // Seed demo user AFTER server is listening so the Better Auth REST API is reachable.
+      // This guarantees the password hash format matches Better Auth's internal verifier.
+      seedDemoUserViaApi(port).catch(
+        /* istanbul ignore next */
+        (err: unknown) => logger.warn({ err }, 'Demo user seed failed — try /auth/register'),
+      );
+    },
   );
 }
 

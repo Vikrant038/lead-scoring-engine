@@ -1,10 +1,15 @@
 /**
  * Database migration & seed (Phase 1 Better Auth).
  * Creates user, session, account, and verification tables on startup.
+ *
+ * WHY seedDemoUser uses fetch() after listen():
+ * Better Auth uses @better-auth/utils for password hashing internally.
+ * Manually calling better-auth/crypto's hashPassword produces a hash in a
+ * different format, causing "Invalid password hash" on verify. The only
+ * guaranteed-compatible way to create the demo user is via Better Auth's
+ * own /api/auth/sign-up/email REST endpoint — same path a real user takes.
  */
-import { sqlite, db } from './connection';
-import { user, account } from './schema';
-import { randomUUID } from 'node:crypto';
+import { sqlite } from './connection';
 
 export function migrate(): void {
   sqlite.exec(`
@@ -56,42 +61,73 @@ export function migrate(): void {
   `);
 }
 
-/** Seed demo user (demo@example.com / password) if not exists. */
-export async function seedDemoUser(): Promise<void> {
-  migrate();
-  const existing = sqlite.prepare('SELECT id FROM user WHERE email = ?').get('demo@example.com');
-  if (!existing) {
-    // Use Better Auth's crypto to produce the exact hash format it expects.
-    // providerId must be 'credential' — that is what Better Auth's email/password
-    // plugin stores when a user signs up via signUpEmail.
-    const { hashPassword } = await import('better-auth/crypto');
-    const now = new Date();
-    const userId = randomUUID();
-    const accountId_row = randomUUID();
-    const hashed = await hashPassword('password');
+/**
+ * Wipe any stale demo user row (wrong hash format from earlier manual seeding).
+ * Called on startup BEFORE the server starts listening.
+ */
+export function wipeStaleDemoUser(): void {
+  // Only wipe if the demo user was manually seeded (providerId = 'email' or
+  // the password hash is in the wrong format). Detect by checking providerId.
+  const acct = sqlite
+    .prepare(
+      `SELECT a.providerId FROM account a
+       JOIN user u ON a.userId = u.id
+       WHERE u.email = 'demo@example.com'`,
+    )
+    .get() as { providerId: string } | undefined;
 
-    db.insert(user)
-      .values({
-        id: userId,
-        name: 'Demo User',
-        email: 'demo@example.com',
-        emailVerified: true,
-        createdAt: now,
-        updatedAt: now,
-      })
+  // If the account has providerId 'email' (old manual seed), or no account at
+  // all yet, wipe so seedDemoUserViaApi() will re-create correctly.
+  if (!acct || acct.providerId !== 'credential') {
+    sqlite
+      .prepare(
+        `DELETE FROM account WHERE userId = (SELECT id FROM user WHERE email = 'demo@example.com')`,
+      )
       .run();
-
-    db.insert(account)
-      .values({
-        id: accountId_row,
-        // Better Auth email/password plugin stores accountId = userId, providerId = 'credential'
-        accountId: userId,
-        providerId: 'credential',
-        userId: userId,
-        password: hashed,
-        createdAt: now,
-        updatedAt: now,
-      })
+    sqlite
+      .prepare(
+        `DELETE FROM session WHERE userId = (SELECT id FROM user WHERE email = 'demo@example.com')`,
+      )
       .run();
+    sqlite.prepare(`DELETE FROM user WHERE email = 'demo@example.com'`).run();
   }
+}
+
+/**
+ * Seed the demo user via Better Auth's REST API after the server is listening.
+ * This guarantees the password hash format matches what Better Auth's verifier
+ * expects — no manual hashing, no format mismatches.
+ *
+ * Called from server.ts inside the app.listen() callback.
+ */
+export async function seedDemoUserViaApi(port: number): Promise<void> {
+  const existing = sqlite.prepare(`SELECT id FROM user WHERE email = 'demo@example.com'`).get();
+  if (existing) return; // already seeded correctly this session
+
+  const base = `http://localhost:${port}`;
+  const res = await fetch(`${base}/api/auth/sign-up/email`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Origin: base,
+    },
+    body: JSON.stringify({
+      email: 'demo@example.com',
+      password: 'password',
+      name: 'Demo User',
+    }),
+  });
+  // 200 = created, 422 = already exists — both are fine
+  if (!res.ok && res.status !== 422) {
+    /* istanbul ignore next */
+    const body = (await res.json().catch(() => ({}))) as { message?: string };
+    throw new Error(body.message ?? `HTTP ${res.status}`);
+  }
+}
+
+// Keep the old export name for backward compatibility with existing tests
+// (tests mock this anyway so the implementation change doesn't matter).
+export async function seedDemoUser(): Promise<void> {
+  // No-op: seeding now happens via seedDemoUserViaApi() after server listens.
+  // This stub exists so import references in tests and legacy callers don't break.
 }

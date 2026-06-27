@@ -35,7 +35,7 @@ jest.mock('../../src/lib/auth/auth', () => ({
 
 // ─── Imports (after the mock is set up) ──────────────────────────────────────
 
-import { migrate, seedDemoUser } from '../../src/db/migrate';
+import { migrate, seedDemoUser, wipeStaleDemoUser, seedDemoUserViaApi } from '../../src/db/migrate';
 import {
   loginPageController,
   loginPostController,
@@ -108,34 +108,102 @@ function mockFetch(ok: boolean, body: Record<string, unknown> = {}, setCookie?: 
 // ─── db/migrate ──────────────────────────────────────────────────────────────
 
 describe('db/migrate', () => {
+  afterEach(() => {
+    delete (global as Record<string, unknown>).fetch;
+  });
+
   it('migrate() is idempotent — safe to call multiple times', () => {
     expect(() => migrate()).not.toThrow();
     expect(() => migrate()).not.toThrow();
   });
 
-  it('seedDemoUser() inserts demo@example.com with credential providerId', async () => {
-    await seedDemoUser();
-    const row = memDb.prepare('SELECT email FROM user WHERE email = ?').get('demo@example.com') as
-      | { email: string }
-      | undefined;
-    expect(row?.email).toBe('demo@example.com');
-
-    // Verify account uses the correct Better Auth credential provider ID
-    const acct = memDb
+  it('wipeStaleDemoUser() removes demo user with wrong providerId', () => {
+    // Insert a demo user with the old wrong provider
+    migrate();
+    memDb
       .prepare(
-        "SELECT providerId FROM account WHERE userId = (SELECT id FROM user WHERE email = 'demo@example.com')",
+        `INSERT OR IGNORE INTO user (id,name,email,emailVerified,createdAt,updatedAt)
+      VALUES ('u-stale','Demo','demo@example.com',1,0,0)`,
       )
-      .get() as { providerId: string } | undefined;
-    expect(acct?.providerId).toBe('credential');
+      .run();
+    memDb
+      .prepare(
+        `INSERT OR IGNORE INTO account (id,accountId,providerId,userId,createdAt,updatedAt)
+      VALUES ('a-stale','demo@example.com','email','u-stale',0,0)`,
+      )
+      .run();
 
-    // second call must not throw (idempotent)
+    wipeStaleDemoUser();
+
+    const row = memDb.prepare("SELECT id FROM user WHERE email='demo@example.com'").get();
+    expect(row).toBeUndefined();
+  });
+
+  it('wipeStaleDemoUser() keeps demo user when providerId is credential', () => {
+    migrate();
+    memDb
+      .prepare(
+        `INSERT OR IGNORE INTO user (id,name,email,emailVerified,createdAt,updatedAt)
+      VALUES ('u-ok','Demo','demo@example.com',1,0,0)`,
+      )
+      .run();
+    memDb
+      .prepare(
+        `INSERT OR IGNORE INTO account (id,accountId,providerId,userId,createdAt,updatedAt)
+      VALUES ('a-ok','u-ok','credential','u-ok',0,0)`,
+      )
+      .run();
+
+    wipeStaleDemoUser();
+
+    const row = memDb.prepare("SELECT id FROM user WHERE email='demo@example.com'").get();
+    expect(row).toBeDefined();
+
+    // Cleanup
+    memDb.prepare("DELETE FROM account WHERE userId='u-ok'").run();
+    memDb.prepare("DELETE FROM user WHERE id='u-ok'").run();
+  });
+
+  it('seedDemoUserViaApi() skips if demo user already exists', async () => {
+    migrate();
+    memDb
+      .prepare(
+        `INSERT OR IGNORE INTO user (id,name,email,emailVerified,createdAt,updatedAt)
+      VALUES ('u-exists','Demo','demo@example.com',1,0,0)`,
+      )
+      .run();
+
+    // fetch should NOT be called because user exists
+    global.fetch = jest.fn();
+    await seedDemoUserViaApi(3000);
+    expect(global.fetch).not.toHaveBeenCalled();
+
+    // Cleanup
+    memDb.prepare("DELETE FROM user WHERE id='u-exists'").run();
+  });
+
+  it('seedDemoUserViaApi() calls sign-up endpoint when no demo user', async () => {
+    migrate();
+    global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, status: 200 });
+    await seedDemoUserViaApi(3001);
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://localhost:3001/api/auth/sign-up/email',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('seedDemoUserViaApi() throws on unexpected non-422 error', async () => {
+    migrate();
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: async () => ({ message: 'Server error' }),
+    });
+    await expect(seedDemoUserViaApi(3002)).rejects.toThrow();
+  });
+
+  it('seedDemoUser() stub resolves without doing anything', async () => {
     await expect(seedDemoUser()).resolves.toBeUndefined();
-    const count = (
-      memDb.prepare("SELECT count(*) as c FROM user WHERE email = 'demo@example.com'").get() as {
-        c: number;
-      }
-    ).c;
-    expect(count).toBe(1);
   });
 });
 
