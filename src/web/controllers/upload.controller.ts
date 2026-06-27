@@ -37,3 +37,26 @@ export const uploadController =
       next(error);
     }
   };
+
+export const demoBatchController =
+  (upload: UploadService): RequestHandler =>
+  (req, res, next) => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const fs = require('node:fs') as typeof import('node:fs');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const path = require('node:path') as typeof import('node:path');
+      const demoPath = path.join(process.cwd(), 'data', 'demo-fallback.json');
+      const buffer = fs.readFileSync(demoPath);
+      const userId = req.user!.id;
+      const job = upload.accept(
+        userId,
+        { originalname: 'demo-fallback.json', buffer },
+        req.session.selectedPersona,
+        req.session.emailSettings,
+      );
+      res.json({ success: true, jobId: job.id });
+    } catch (error) {
+      next(error);
+    }
+  };

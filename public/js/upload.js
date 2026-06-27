@@ -227,8 +227,61 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const demoBatchBtn = document.getElementById('demo-batch-btn');
+  if (demoBatchBtn) {
+    demoBatchBtn.addEventListener('click', () => {
+      runDemoBatch();
+    });
+  }
+
   // --- Upload Handler & Polling Logic ---
   let activeJobPollInterval = null;
+
+  async function runDemoBatch() {
+    hideError();
+    try {
+      const statusContainer = document.getElementById('job-status-container');
+      const filenameEl = document.getElementById('job-filename');
+      const progressBar = document.getElementById('job-progress-bar');
+      const statusBadge = document.getElementById('job-status-badge');
+      const logArea = document.getElementById('job-log-area');
+      const spinner = document.getElementById('job-spinner');
+
+      if (filenameEl) filenameEl.textContent = 'demo-fallback.json';
+      if (progressBar) progressBar.style.width = '0%';
+      if (logArea) logArea.innerHTML = '';
+      if (statusBadge) {
+        statusBadge.textContent = 'Processing';
+        statusBadge.className = 'px-2.5 py-1 text-xs font-bold rounded-full bg-blue-50 text-[#0029ff] uppercase tracking-wider';
+      }
+      if (spinner) spinner.classList.remove('hidden');
+      if (statusContainer) statusContainer.classList.remove('hidden');
+
+      setTimeout(() => {
+        if (statusContainer) statusContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+
+      const res = await fetch('/api/demo-batch', {
+        method: 'POST',
+        headers: {
+          'X-CSRF-Token': csrfToken,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Demo batch start failed.');
+      }
+
+      const data = await res.json();
+      pollJobStatus(data.jobId);
+    } catch (err) {
+      showError(err.message || 'An unexpected error occurred starting demo batch.');
+      const statusContainer = document.getElementById('job-status-container');
+      if (statusContainer) statusContainer.classList.add('hidden');
+    }
+  }
 
   async function handleFileUpload(file) {
     if (!file.name.toLowerCase().endsWith('.json') && file.type !== 'application/json') {

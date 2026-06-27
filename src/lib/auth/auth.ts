@@ -9,6 +9,7 @@
  * trustedOrigins must include the app's own base URL so that server-side fetch()
  * calls from auth.controller.ts (which include an Origin header) are accepted.
  */
+import 'dotenv/config';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { db } from '../../db/connection';

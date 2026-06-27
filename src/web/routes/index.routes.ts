@@ -5,7 +5,11 @@
  */
 import { Router } from 'express';
 import { uploadMiddleware } from '../middleware/upload.middleware';
-import { homeController, uploadController } from '../controllers/upload.controller';
+import {
+  homeController,
+  uploadController,
+  demoBatchController,
+} from '../controllers/upload.controller';
 import { jobController, queueController } from '../controllers/job.controller';
 import { downloadController, historyController } from '../controllers/history.controller';
 import {
@@ -63,6 +67,7 @@ export function createRouter(ctx: WebContext): Router {
 
   // ── Upload + jobs (F-10) ───────────────────────────────────────────────────
   router.post('/api/upload', requireAuth, uploadMiddleware, uploadController(uploadService));
+  router.post('/api/demo-batch', requireAuth, demoBatchController(uploadService));
   router.get('/api/queue', requireAuth, queueController(ctx));
   router.get('/api/job/:jobId', requireAuth, jobController(ctx));
   router.get('/api/download/:recordId', requireAuth, downloadController(ctx));

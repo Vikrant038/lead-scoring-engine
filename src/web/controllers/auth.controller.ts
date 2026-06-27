@@ -9,6 +9,7 @@
  * must add `Origin: <baseURL>` explicitly, and the baseURL must appear in
  * Better Auth's `trustedOrigins` config (see src/lib/auth/auth.ts).
  */
+import 'dotenv/config';
 import type { RequestHandler } from 'express';
 import { auth } from '../../lib/auth/auth';
 import { fromNodeHeaders } from 'better-auth/node';

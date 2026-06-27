@@ -7,6 +7,11 @@ import { ConfigService } from '../../src/config/config.service';
 import { NullProvider } from '../../src/llm/null.provider';
 import { OutreachEmailService } from '../../src/modules/outreach-email.service';
 import { createProfiler } from '../../src/batch/run-batch';
+import {
+  homeController,
+  uploadController,
+  demoBatchController,
+} from '../../src/web/controllers/upload.controller';
 import { FileHandlerRepository } from '../../src/repositories/file-handler.repository';
 import { PersonaRepository } from '../../src/repositories/persona.repository';
 import { SessionStoreRepository } from '../../src/repositories/session-store.repository';
@@ -373,6 +378,39 @@ describe('web controllers (unit)', () => {
       clearDataController(ctx)(req({ session }), res, jest.fn());
       expect(fs.existsSync(dirs.base)).toBe(false);
       expect(session.selectedPersona).toBeUndefined();
+    });
+  });
+
+  describe('Upload & Home Controllers', () => {
+    it('renders home page view', () => {
+      const res = mockRes();
+      homeController(ctx)(req({ user: { id: 'u1' } as any }), res, jest.fn());
+      expect(res.view).toBe('index');
+    });
+
+    it('handles file upload successfully and throws on missing file', () => {
+      const uploadService = { accept: jest.fn().mockReturnValue({ id: 'job1' }) } as any;
+      const res = mockRes();
+      uploadController(uploadService)(
+        req({
+          user: { id: 'u1' } as any,
+          file: { originalname: 'test.json', buffer: Buffer.from('[]') } as any,
+        }),
+        res,
+        jest.fn(),
+      );
+      expect(res.body).toEqual({ success: true, jobId: 'job1' });
+
+      const next = jest.fn();
+      uploadController(uploadService)(req({ user: { id: 'u1' } as any }), mockRes(), next);
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it('handles demoBatchController successfully', () => {
+      const uploadService = { accept: jest.fn().mockReturnValue({ id: 'demoJob1' }) } as any;
+      const res = mockRes();
+      demoBatchController(uploadService)(req({ user: { id: 'u1' } as any }), res, jest.fn());
+      expect(res.body).toEqual({ success: true, jobId: 'demoJob1' });
     });
   });
 });
