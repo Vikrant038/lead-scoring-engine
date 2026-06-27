@@ -229,9 +229,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const demoBatchCard = document.getElementById('demo-batch-card');
   const demoBatchBtn = document.getElementById('demo-batch-btn');
+  const currentUserId = document.body.dataset.userId || 'guest';
+  const userDemoKey = `demo_batch_run_${currentUserId}`;
 
   if (demoBatchCard) {
-    if (localStorage.getItem('demo_batch_run') === 'true') {
+    if (localStorage.getItem(userDemoKey) === 'true') {
       demoBatchCard.classList.add('hidden');
     }
   }
@@ -250,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (demoBatchCard) {
       demoBatchCard.classList.add('hidden');
     }
-    localStorage.setItem('demo_batch_run', 'true');
+    localStorage.setItem(userDemoKey, 'true');
 
     try {
       const statusContainer = document.getElementById('job-status-container');

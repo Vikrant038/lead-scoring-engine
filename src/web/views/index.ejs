@@ -65,7 +65,7 @@
       }
     </style>
   </head>
-  <body class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-150 flex flex-col min-h-screen" data-poll-interval="<%= pollIntervalMs %>">
+  <body class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-150 flex flex-col min-h-screen" data-poll-interval="<%= pollIntervalMs %>" data-user-id="<%= typeof user !== 'undefined' && user ? user.id : (typeof userEmail !== 'undefined' && userEmail ? userEmail : 'guest') %>">
     <%
       const activePersonaObj = personas.find(p => p.id === selectedPersona) || personas[0];
       const activePersonaName = activePersonaObj ? activePersonaObj.name : 'Default ICP';
