@@ -78,7 +78,7 @@ Security Posture (Built-In, Non-Negotiable)
 - Sessions: HttpOnly, SameSite=Strict, Secure in prod
 - Secrets in logs: pino redacts password, token, secret, key, auth before stdout
 - Uploads: Multer in-memory, 5 MB cap, JSON-only filter, re-validated by Zod before persist
-- Supply chain: lockfile committed; CI runs npm audit --audit-level=high + Gitleaks + dependency-review + SBOM (CycloneDX, 90-day retention)
+- Supply chain: lockfile committed; package `overrides` for transitive CVE mitigation (`tar`, `cacache`, `esbuild`); CI runs npm audit --audit-level=high + Gitleaks + dependency-review + SBOM (CycloneDX, 90-day retention). See `docs/ci/WORKFLOWS.md`.
 ---
 Key Directories & Ownership
 src/
