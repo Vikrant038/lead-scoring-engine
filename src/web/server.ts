@@ -4,6 +4,7 @@
  * Phase 1: DB migration runs on startup; demo-user is seeded via Better Auth REST API
  * after the server starts listening (ensures correct password hash format).
  */
+import 'dotenv/config';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import express, { type Express } from 'express';

@@ -62,6 +62,19 @@ function authFetchHeaders(req: Parameters<RequestHandler>[0]): Record<string, st
   };
 }
 
+/** Forward set-cookie headers from Better Auth REST response to Express response. */
+function forwardCookies(authRes: Response, res: Parameters<RequestHandler>[1]): void {
+  const getSetCookieFn = (authRes.headers as unknown as { getSetCookie?: () => string[] })
+    .getSetCookie;
+  const cookies =
+    typeof getSetCookieFn === 'function'
+      ? getSetCookieFn.call(authRes.headers)
+      : authRes.headers.get('set-cookie');
+  if (cookies) {
+    res.setHeader('Set-Cookie', cookies);
+  }
+}
+
 // ── Form-submit handlers ────────────────────────────────────────────────────
 
 /**
@@ -93,8 +106,7 @@ export const loginPostController: RequestHandler = async (req, res) => {
       return res.redirect(`/auth/login?error=${encodeURIComponent(message)}`);
     }
 
-    const setCookie = authRes.headers.get('set-cookie');
-    if (setCookie) res.setHeader('Set-Cookie', setCookie);
+    forwardCookies(authRes, res);
 
     const returnTo = typeof req.session?.returnTo === 'string' ? req.session.returnTo : '/';
     if (req.session?.returnTo) delete req.session.returnTo;
@@ -137,8 +149,7 @@ export const registerPostController: RequestHandler = async (req, res) => {
       return res.redirect(`/auth/register?error=${encodeURIComponent(message)}`);
     }
 
-    const setCookie = authRes.headers.get('set-cookie');
-    if (setCookie) res.setHeader('Set-Cookie', setCookie);
+    forwardCookies(authRes, res);
 
     return res.redirect('/');
   } catch {
