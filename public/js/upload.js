@@ -505,19 +505,19 @@ function showBatchCompletedToast() {
   if (!container) return;
 
   const toast = document.createElement('div');
-  toast.className = 'pointer-events-auto bg-gray-900 text-white dark:bg-gray-950 dark:text-white border-2 border-[#0029ff] dark:border-blue-500 rounded-xl py-2.5 px-3.5 shadow-2xl shadow-blue-500/30 transition-all duration-300 transform translate-x-full opacity-0 flex items-center justify-between gap-3 min-w-[260px]';
+  toast.className = 'pointer-events-auto bg-black text-white dark:bg-black dark:text-white border-2 border-[#0029ff] dark:border-blue-400 rounded-xl py-3 px-4 shadow-2xl shadow-blue-500/40 transition-all duration-300 transform translate-x-full opacity-0 flex items-center justify-between gap-3.5 min-w-[270px] backdrop-blur-xl';
 
   toast.innerHTML = `
-    <div class="flex items-center gap-2 min-w-0">
-      <span class="flex-shrink-0 w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-      <span class="text-xs font-bold truncate">Batch Complete!</span>
+    <div class="flex items-center gap-2.5 min-w-0">
+      <span class="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse shadow-sm shadow-green-400/50"></span>
+      <span class="text-xs font-extrabold tracking-wide truncate">Batch Complete!</span>
     </div>
     <div class="flex items-center gap-2 flex-shrink-0">
-      <a href="/history" class="px-2.5 py-1 bg-[#0029ff] hover:bg-blue-600 active:bg-blue-700 text-white text-xs font-bold rounded-lg transition-all shadow-sm flex items-center gap-1">
+      <a href="/history" class="px-3 py-1.5 bg-[#0029ff] hover:bg-blue-600 active:bg-blue-700 text-white text-xs font-extrabold rounded-lg transition-all shadow-md shadow-blue-500/30 flex items-center gap-1.5">
         <span>History</span>
-        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
       </a>
-      <button type="button" class="dismiss-toast text-gray-400 hover:text-white p-1 rounded transition-colors">
+      <button type="button" class="dismiss-toast text-gray-400 hover:text-white p-1 rounded-md transition-colors">
         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
