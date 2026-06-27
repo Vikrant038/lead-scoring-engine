@@ -492,29 +492,22 @@ function showBatchCompletedToast() {
   if (!container) return;
 
   const toast = document.createElement('div');
-  toast.className = 'pointer-events-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-2 border-[#0029ff]/40 dark:border-blue-500/40 rounded-2xl p-4 shadow-2xl shadow-blue-500/20 transition-all duration-300 transform translate-x-full opacity-0 flex items-start gap-3.5 relative overflow-hidden';
+  toast.className = 'pointer-events-auto bg-gray-900 text-white dark:bg-gray-950 dark:text-white border-2 border-[#0029ff] dark:border-blue-500 rounded-xl py-2.5 px-3.5 shadow-2xl shadow-blue-500/30 transition-all duration-300 transform translate-x-full opacity-0 flex items-center justify-between gap-3 min-w-[260px]';
 
   toast.innerHTML = `
-    <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#0029ff] to-blue-400"></div>
-    <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-[#0029ff] dark:text-blue-400 text-lg shadow-sm">
-      🚀
+    <div class="flex items-center gap-2 min-w-0">
+      <span class="flex-shrink-0 w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+      <span class="text-xs font-bold truncate">Batch Complete!</span>
     </div>
-    <div class="flex-1 min-w-0">
-      <h4 class="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">Batch Scoring Complete</h4>
-      <p class="text-xs text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">Your leads have been qualified! View scores, analysis & outreach emails.</p>
-      <div class="mt-3 flex items-center gap-2.5">
-        <a href="/history" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0029ff] hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold rounded-lg transition-all shadow-md shadow-blue-500/20 hover:scale-105">
-          <span>View History</span>
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-          </svg>
-        </a>
-        <button type="button" class="dismiss-toast text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 font-medium px-2 py-1 transition-colors">Dismiss</button>
-      </div>
+    <div class="flex items-center gap-2 flex-shrink-0">
+      <a href="/history" class="px-2.5 py-1 bg-[#0029ff] hover:bg-blue-600 active:bg-blue-700 text-white text-xs font-bold rounded-lg transition-all shadow-sm flex items-center gap-1">
+        <span>History</span>
+        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+      </a>
+      <button type="button" class="dismiss-toast text-gray-400 hover:text-white p-1 rounded transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
     </div>
-    <button type="button" class="dismiss-toast text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5 rounded-lg transition-colors">
-      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-    </button>
   `;
 
   container.appendChild(toast);
@@ -533,4 +526,5 @@ function showBatchCompletedToast() {
     });
   });
 }
+
 
