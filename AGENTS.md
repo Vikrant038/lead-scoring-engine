@@ -120,19 +120,22 @@ Demo fallback	data/demo-fallback.json â curated dataset used when --no-ai o
 - **Correlation IDs** â `correlation-id.middleware.ts` adds `req.correlationId`; included in all log lines
 - **Zod-first types** â domain types (`src/domain/*.types.ts`) are `z.infer<typeof schema>`; never hand-written
 - **Immutable config edits** â Config Editor POSTs to `/config` â validated by `appConfigSchema` â `ConfigService.set()` replaces entire config atomically
+- **No `any`** â€” TypeScript strict + ESLint forbids it
+- **No `console.log`** â€” use `logger` (pino with redaction)
+- **Error codes** â€” central registry in `src/lib/errors/codes.ts`; every `DomainError` carries one
+- **Correlation IDs** â€” `correlation-id.middleware.ts` adds `req.correlationId`; included in all log lines
+- **Zod-first types** â€” domain types (`src/domain/*.types.ts`) are `z.infer<typeof schema>`; never hand-written
+- **Immutable config edits** â€” Config Editor POSTs to `/config` â stř validated by `appConfigSchema` â†’ `ConfigService.set()` replaces entire config atomically
 ---
 References (Authoritative Sources)
-- CLAUDE.md â governing AI agent behavior (Senior DevSecOps Consultant persona, 4 standards docs, phased pipeline with approval gates)
-- docs/ARCHITECTURE.md â design rationale, trade-offs, process, testing strategy
-- docs/DEPLOYMENT.md â production deployment steps
-- PROJECT_PLAN.md â module catalogue, roadmap, traceability matrix
-- requirement.md â full software requirements specification
-- .github/workflows/ci.yml, security.yml, e2e.yml â executable CI truth
+- CLAUDE.md â€” governing AI agent behavior (Senior DevSecOps Consultant persona, 4 standards docs, phased pipeline with approval gates)
+- docs/ARCHITECTURE.md â€” design rationale, trade-offs, process, testing strategy
+- docs/DEPLOYMENT.md â€” production deployment steps
+- PROJECT_PLAN.md â€” module catalogue, roadmap, traceability matrix
+- docs/REQUIREMENTS.md — full software requirements specification (SRS)
+- .github/workflows/ci.yml, security.yml, e2e.yml â€” executable CI truth
 ---
 What NOT to Do
-- â Don't skip typecheck â lint â test --coverage locally before pushing
-- â Don't add a dependency without npm audit + dependency-review (CI enforces this)
-- â Don't bypass CSRF or path-guard â they're the isolation boundary
 - â Don't assume AI is available â always check llm.available and fallback
 - â Don't write types by hand â infer from Zod schemas
 - â Don't use console.* â use logger (redacts PII)

@@ -2,7 +2,7 @@
 
 **Status:** Accepted (2026-06-21)
 
-**Context:** requirement.md §2.5 mandated plain JS; the governing CLAUDE.md (Commercial tier,
+**Context:** `docs/REQUIREMENTS.md` §2.5 mandated plain JS; the governing CLAUDE.md (Commercial tier,
 "CLAUDE.md fully wins") mandates strict typing, Zod, CSRF, helmet, structured logging, and tests.
 
 **Decision:** Build in strict TypeScript (compiled to CommonJS) with Express/EJS/Multer 2.x,
