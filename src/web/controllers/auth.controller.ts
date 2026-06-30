@@ -13,6 +13,10 @@ import 'dotenv/config';
 import type { RequestHandler } from 'express';
 import { auth } from '../../lib/auth/auth';
 import { fromNodeHeaders } from 'better-auth/node';
+import { db } from '../../db/connection';
+import { user, verification } from '../../db/schema';
+import { eq, and } from 'drizzle-orm';
+import { sendEmail } from '../../lib/email/fake-mailer';
 
 // ── View controllers ────────────────────────────────────────────────────────
 
@@ -109,6 +113,34 @@ export const loginPostController: RequestHandler = async (req, res) => {
 
     forwardCookies(authRes, res);
 
+    // Check if the user is verified in the database
+    const [userRecord] = await db.select().from(user).where(eq(user.email, email)).limit(1);
+
+    if (userRecord && !userRecord.emailVerified) {
+      // Generate and send code
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+      const id = Math.random().toString(36).substring(2);
+
+      await db.delete(verification).where(eq(verification.identifier, email));
+      await db.insert(verification).values({
+        id,
+        identifier: email,
+        value: code,
+        expiresAt,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await sendEmail({
+        to: email,
+        subject: 'Verify your email — ICP Profiler',
+        body: `Your 6-digit verification code is: ${code}. It will expire in 15 minutes.`,
+      });
+
+      return res.redirect(`/auth/verify-email?email=${encodeURIComponent(email)}`);
+    }
+
     const returnTo = typeof req.session?.returnTo === 'string' ? req.session.returnTo : '/';
     if (req.session?.returnTo) delete req.session.returnTo;
     return res.redirect(returnTo);
@@ -152,7 +184,28 @@ export const registerPostController: RequestHandler = async (req, res) => {
 
     forwardCookies(authRes, res);
 
-    return res.redirect('/');
+    // Generate and send 6-digit verification code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+    const id = Math.random().toString(36).substring(2);
+
+    await db.delete(verification).where(eq(verification.identifier, email));
+    await db.insert(verification).values({
+      id,
+      identifier: email,
+      value: code,
+      expiresAt,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await sendEmail({
+      to: email,
+      subject: 'Verify your email — ICP Profiler',
+      body: `Your 6-digit verification code is: ${code}. It will expire in 15 minutes.`,
+    });
+
+    return res.redirect(`/auth/verify-email?email=${encodeURIComponent(email)}`);
   } catch {
     return res.redirect('/auth/register?error=An+unexpected+error+occurred');
   }
@@ -178,4 +231,104 @@ export const logoutController: RequestHandler = async (req, res) => {
   req.session.destroy(() => {
     res.redirect('/auth/login');
   });
+};
+
+// GET /auth/verify-email
+export const verifyEmailPageController: RequestHandler = (req, res) => {
+  const email = req.query.email;
+  if (typeof email !== 'string') {
+    return res.redirect('/auth/login');
+  }
+
+  res.render('verify-email', {
+    title: 'Verify Email — ICP Profiler',
+    csrfToken: res.locals.csrfToken,
+    error: req.query.error ?? null,
+    success: req.query.success ?? null,
+    cspNonce: res.locals.cspNonce ?? '',
+    email,
+  });
+};
+
+// POST /auth/verify-email
+export const verifyEmailPostController: RequestHandler = async (req, res) => {
+  const { email, code } = req.body as { email?: string; code?: string };
+
+  if (!email || !code) {
+    return res.redirect(
+      `/auth/verify-email?email=${encodeURIComponent(email ?? '')}&error=Code+is+required`,
+    );
+  }
+
+  try {
+    const [tokenRecord] = await db
+      .select()
+      .from(verification)
+      .where(and(eq(verification.identifier, email), eq(verification.value, code)))
+      .limit(1);
+
+    if (!tokenRecord) {
+      return res.redirect(
+        `/auth/verify-email?email=${encodeURIComponent(email)}&error=Invalid+verification+code`,
+      );
+    }
+
+    if (new Date(tokenRecord.expiresAt).getTime() < Date.now()) {
+      return res.redirect(
+        `/auth/verify-email?email=${encodeURIComponent(email)}&error=Verification+code+has+expired`,
+      );
+    }
+
+    // Mark email as verified
+    await db.update(user).set({ emailVerified: true }).where(eq(user.email, email));
+
+    // Delete verification token
+    await db.delete(verification).where(eq(verification.identifier, email));
+
+    return res.redirect('/history');
+  } catch {
+    return res.redirect(
+      `/auth/verify-email?email=${encodeURIComponent(email)}&error=An+unexpected+error+occurred`,
+    );
+  }
+};
+
+// POST /auth/verify-email/resend
+export const resendVerificationPostController: RequestHandler = async (req, res) => {
+  const { email } = req.body as { email?: string };
+
+  if (!email) {
+    return res.redirect('/auth/login');
+  }
+
+  try {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+    const id = Math.random().toString(36).substring(2);
+
+    await db.delete(verification).where(eq(verification.identifier, email));
+
+    await db.insert(verification).values({
+      id,
+      identifier: email,
+      value: code,
+      expiresAt,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await sendEmail({
+      to: email,
+      subject: 'Verify your email — ICP Profiler',
+      body: `Your new 6-digit verification code is: ${code}. It will expire in 15 minutes.`,
+    });
+
+    return res.redirect(
+      `/auth/verify-email?email=${encodeURIComponent(email)}&success=A+new+verification+code+has+been+sent`,
+    );
+  } catch {
+    return res.redirect(
+      `/auth/verify-email?email=${encodeURIComponent(email)}&error=Failed+to+resend+code`,
+    );
+  }
 };

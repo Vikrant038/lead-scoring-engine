@@ -101,6 +101,9 @@ export function wipeStaleDemoUser(): void {
  * Called from server.ts inside the app.listen() callback.
  */
 export async function seedDemoUserViaApi(port: number): Promise<void> {
+  // Ensure any existing demo user in the database file is marked as verified
+  sqlite.prepare("UPDATE user SET emailVerified = 1 WHERE email = 'demo@example.com'").run();
+
   const existing = sqlite.prepare(`SELECT id FROM user WHERE email = 'demo@example.com'`).get();
   if (existing) return; // already seeded correctly this session
 
@@ -123,6 +126,9 @@ export async function seedDemoUserViaApi(port: number): Promise<void> {
     const body = (await res.json().catch(() => ({}))) as { message?: string };
     throw new Error(body.message ?? `HTTP ${res.status}`);
   }
+
+  // Ensure the seeded demo user is marked as verified
+  sqlite.prepare("UPDATE user SET emailVerified = 1 WHERE email = 'demo@example.com'").run();
 }
 
 // Keep the old export name for backward compatibility with existing tests

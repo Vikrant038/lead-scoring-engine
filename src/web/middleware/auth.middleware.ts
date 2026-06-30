@@ -20,6 +20,13 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     }
     req.user = session.user;
     res.locals.user = session.user;
+
+    // Gate access for unverified users
+    if (!session.user.emailVerified) {
+      res.redirect(`/auth/verify-email?email=${encodeURIComponent(session.user.email)}`);
+      return;
+    }
+
     next();
   } catch (error) {
     next(error);

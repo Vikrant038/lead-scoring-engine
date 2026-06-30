@@ -41,6 +41,9 @@ import {
   registerPageController,
   registerPostController,
   logoutController,
+  verifyEmailPageController,
+  verifyEmailPostController,
+  resendVerificationPostController,
 } from '../controllers/auth.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 import { UploadService } from '../services/upload.service';
@@ -56,6 +59,9 @@ export function createRouter(ctx: WebContext): Router {
   router.get('/auth/register', registerPageController);
   router.post('/auth/register', registerPostController);
   router.get('/auth/logout', logoutController);
+  router.get('/auth/verify-email', verifyEmailPageController);
+  router.post('/auth/verify-email', verifyEmailPostController);
+  router.post('/auth/verify-email/resend', resendVerificationPostController);
 
   // ── Protected pages ────────────────────────────────────────────────────────
   router.get('/', requireAuth, homeController(ctx));
