@@ -16,6 +16,14 @@ declare module 'express-session' {
     userEmail?: string;
     /** URL to redirect to after login. */
     returnTo?: string;
+    /** Temporary user details stored during the email verification process. */
+    tempUser?: {
+      email?: string;
+      password?: string;
+      name?: string;
+    };
+    /** Tracks the verification screen loaded state to detect page refreshes. */
+    verificationStep?: 'initiated' | 'loaded';
   }
 }
 

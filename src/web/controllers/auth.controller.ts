@@ -138,6 +138,8 @@ export const loginPostController: RequestHandler = async (req, res) => {
         body: `Your 6-digit verification code is: ${code}. It will expire in 15 minutes.`,
       });
 
+      req.session.verificationStep = 'initiated';
+
       return res.redirect(`/auth/verify-email?email=${encodeURIComponent(email)}`);
     }
 
@@ -165,24 +167,18 @@ export const registerPostController: RequestHandler = async (req, res) => {
   }
 
   try {
-    const authRes = await fetch(`${authBaseUrl()}/api/auth/sign-up/email`, {
-      method: 'POST',
-      headers: authFetchHeaders(req),
-      body: JSON.stringify({ email, password, name: name ?? email }),
-    });
-
-    if (!authRes.ok) {
-      let message = 'Registration failed';
-      try {
-        const data = (await authRes.json()) as { message?: string };
-        if (data.message) message = data.message;
-      } catch {
-        // ignore JSON parse error
-      }
-      return res.redirect(`/auth/register?error=${encodeURIComponent(message)}`);
+    // Check if the user already exists in the database
+    const [existingUser] = await db.select().from(user).where(eq(user.email, email)).limit(1);
+    if (existingUser) {
+      return res.redirect('/auth/register?error=Email+already+registered');
     }
 
-    forwardCookies(authRes, res);
+    // Store registration details temporarily in the session
+    req.session.tempUser = {
+      email,
+      password,
+      name: name ?? email,
+    };
 
     // Generate and send 6-digit verification code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -204,6 +200,9 @@ export const registerPostController: RequestHandler = async (req, res) => {
       subject: 'Verify your email — ICP Profiler',
       body: `Your 6-digit verification code is: ${code}. It will expire in 15 minutes.`,
     });
+
+    // Initiate verification state machine
+    req.session.verificationStep = 'initiated';
 
     return res.redirect(`/auth/verify-email?email=${encodeURIComponent(email)}`);
   } catch {
@@ -234,10 +233,24 @@ export const logoutController: RequestHandler = async (req, res) => {
 };
 
 // GET /auth/verify-email
-export const verifyEmailPageController: RequestHandler = (req, res) => {
+export const verifyEmailPageController: RequestHandler = async (req, res) => {
   const email = req.query.email;
   if (typeof email !== 'string') {
     return res.redirect('/auth/login');
+  }
+
+  // Detect manual page refresh/reload
+  if (req.session.verificationStep === 'loaded') {
+    // Expire OTP and end verification
+    await db.delete(verification).where(eq(verification.identifier, email));
+    delete req.session.tempUser;
+    delete req.session.verificationStep;
+    return res.redirect('/auth/register?error=Verification+cancelled+due+to+page+refresh');
+  }
+
+  // Transition from 'initiated' to 'loaded'
+  if (req.session.verificationStep === 'initiated') {
+    req.session.verificationStep = 'loaded';
   }
 
   res.render('verify-email', {
@@ -255,6 +268,7 @@ export const verifyEmailPostController: RequestHandler = async (req, res) => {
   const { email, code } = req.body as { email?: string; code?: string };
 
   if (!email || !code) {
+    req.session.verificationStep = 'initiated'; // prevent treated as refresh on redirect
     return res.redirect(
       `/auth/verify-email?email=${encodeURIComponent(email ?? '')}&error=Code+is+required`,
     );
@@ -268,25 +282,77 @@ export const verifyEmailPostController: RequestHandler = async (req, res) => {
       .limit(1);
 
     if (!tokenRecord) {
+      req.session.verificationStep = 'initiated'; // prevent treated as refresh on redirect
       return res.redirect(
         `/auth/verify-email?email=${encodeURIComponent(email)}&error=Invalid+verification+code`,
       );
     }
 
     if (new Date(tokenRecord.expiresAt).getTime() < Date.now()) {
+      req.session.verificationStep = 'initiated'; // prevent treated as refresh on redirect
       return res.redirect(
         `/auth/verify-email?email=${encodeURIComponent(email)}&error=Verification+code+has+expired`,
       );
     }
 
-    // Mark email as verified
-    await db.update(user).set({ emailVerified: true }).where(eq(user.email, email));
+    // If it's a new registration, create the account in the database now
+    if (req.session.tempUser && req.session.tempUser.email === email) {
+      const { password, name } = req.session.tempUser;
+
+      // Call Better Auth to create the user
+      const signupRes = await fetch(`${authBaseUrl()}/api/auth/sign-up/email`, {
+        method: 'POST',
+        headers: authFetchHeaders(req),
+        body: JSON.stringify({ email, password, name }),
+      });
+
+      if (!signupRes.ok) {
+        let message = 'Registration failed';
+        try {
+          const data = (await signupRes.json()) as { message?: string };
+          if (data.message) message = data.message;
+        } catch {
+          // ignore
+        }
+        req.session.verificationStep = 'initiated';
+        return res.redirect(
+          `/auth/verify-email?email=${encodeURIComponent(email)}&error=${encodeURIComponent(message)}`,
+        );
+      }
+
+      // Mark the user as verified in the database
+      await db.update(user).set({ emailVerified: true }).where(eq(user.email, email));
+
+      // Sign the user in to establish session cookies
+      const signinRes = await fetch(`${authBaseUrl()}/api/auth/sign-in/email`, {
+        method: 'POST',
+        headers: authFetchHeaders(req),
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!signinRes.ok) {
+        req.session.verificationStep = 'initiated';
+        return res.redirect(
+          `/auth/verify-email?email=${encodeURIComponent(email)}&error=Failed+to+log+in+after+verification`,
+        );
+      }
+
+      forwardCookies(signinRes, res);
+    } else {
+      // For existing unverified users logging in, just mark them as verified
+      await db.update(user).set({ emailVerified: true }).where(eq(user.email, email));
+    }
 
     // Delete verification token
     await db.delete(verification).where(eq(verification.identifier, email));
 
+    // Clear temporary session data
+    delete req.session.tempUser;
+    delete req.session.verificationStep;
+
     return res.redirect('/history');
   } catch {
+    req.session.verificationStep = 'initiated'; // prevent treated as refresh on redirect
     return res.redirect(
       `/auth/verify-email?email=${encodeURIComponent(email)}&error=An+unexpected+error+occurred`,
     );
@@ -323,10 +389,13 @@ export const resendVerificationPostController: RequestHandler = async (req, res)
       body: `Your new 6-digit verification code is: ${code}. It will expire in 15 minutes.`,
     });
 
+    req.session.verificationStep = 'initiated'; // prevent treated as refresh on redirect
+
     return res.redirect(
       `/auth/verify-email?email=${encodeURIComponent(email)}&success=A+new+verification+code+has+been+sent`,
     );
   } catch {
+    req.session.verificationStep = 'initiated'; // prevent treated as refresh on redirect
     return res.redirect(
       `/auth/verify-email?email=${encodeURIComponent(email)}&error=Failed+to+resend+code`,
     );

@@ -335,8 +335,8 @@ describe('loginPostController', () => {
 // ─── registerPostController ───────────────────────────────────────────────────
 
 describe('registerPostController', () => {
-  afterEach(() => {
-    delete (global as Record<string, unknown>).fetch;
+  beforeEach(() => {
+    migrate();
   });
 
   it('redirects to register with error if email missing', async () => {
@@ -346,29 +346,47 @@ describe('registerPostController', () => {
     expect(state.redirected).toContain('/auth/register?error=');
   });
 
-  it('redirects to /auth/verify-email on successful registration and forwards cookie', async () => {
-    mockFetch(true, {}, 'better-auth.sid=xyz; Path=/; HttpOnly');
-    const req = makeReq({ body: { email: 'new@b.com', password: 'pass123', name: 'Test' } });
+  it('redirects to /auth/verify-email and stores tempUser in session on success', async () => {
+    const req = makeReq({
+      body: { email: 'new@b.com', password: 'pass123', name: 'Test' },
+      session: {},
+    });
     const { res, state } = makeRes();
     await registerPostController(req, res, jest.fn());
     expect(state.redirected).toBe('/auth/verify-email?email=new%40b.com');
-    expect(state.headers['Set-Cookie']).toBeTruthy();
+    expect(req.session.tempUser).toEqual({
+      email: 'new@b.com',
+      password: 'pass123',
+      name: 'Test',
+    });
+    expect(req.session.verificationStep).toBe('initiated');
   });
 
-  it('redirects to register with error on failed registration', async () => {
-    mockFetch(false, { message: 'Email already in use' });
+  it('redirects to register with error if email already registered', async () => {
+    await db.insert(user).values({
+      id: 'existing-id',
+      name: 'Existing User',
+      email: 'existing@b.com',
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const req = makeReq({ body: { email: 'existing@b.com', password: 'pass' } });
+    const { res, state } = makeRes();
+    await registerPostController(req, res, jest.fn());
+    expect(state.redirected).toContain('/auth/register?error=Email+already+registered');
+  });
+
+  it('redirects to register with generic error if database throws', async () => {
+    const spy = jest.spyOn(db, 'select').mockImplementationOnce(() => {
+      throw new Error('db fail');
+    });
     const req = makeReq({ body: { email: 'a@b.com', password: 'pass' } });
     const { res, state } = makeRes();
     await registerPostController(req, res, jest.fn());
-    expect(state.redirected).toContain('/auth/register?error=');
-  });
-
-  it('redirects to register with error if fetch throws', async () => {
-    global.fetch = jest.fn().mockRejectedValueOnce(new Error('network fail'));
-    const req = makeReq({ body: { email: 'a@b.com', password: 'pass' } });
-    const { res, state } = makeRes();
-    await registerPostController(req, res, jest.fn());
-    expect(state.redirected).toContain('/auth/register?error=');
+    expect(state.redirected).toContain('/auth/register?error=An+unexpected+error+occurred');
+    spy.mockRestore();
   });
 });
 
@@ -452,19 +470,60 @@ describe('requireAuth middleware', () => {
 
 describe('verify-email controllers', () => {
   describe('verifyEmailPageController', () => {
-    it('redirects to /auth/login if email query parameter is missing', () => {
+    beforeEach(() => {
+      migrate();
+    });
+
+    it('redirects to /auth/login if email query parameter is missing', async () => {
       const req = makeReq({ query: {} });
       const { res, state } = makeRes();
-      verifyEmailPageController(req, res, jest.fn());
+      await verifyEmailPageController(req, res, jest.fn());
       expect(state.redirected).toBe('/auth/login');
     });
 
-    it('renders verify-email view with email', () => {
-      const req = makeReq({ query: { email: 'test@b.com' } });
+    it('renders verify-email view and transitions state from initiated to loaded', async () => {
+      const req = makeReq({
+        query: { email: 'test@b.com' },
+        session: { verificationStep: 'initiated' },
+      });
       const { res, state } = makeRes();
-      verifyEmailPageController(req, res, jest.fn());
+      await verifyEmailPageController(req, res, jest.fn());
       expect(state.rendered?.view).toBe('verify-email');
       expect(state.rendered?.data.email).toBe('test@b.com');
+      expect(req.session.verificationStep).toBe('loaded');
+    });
+
+    it('cancels verification and redirects to register if page refresh detected', async () => {
+      await db.insert(verification).values({
+        id: 'v-temp',
+        identifier: 'test@b.com',
+        value: '123456',
+        expiresAt: new Date(Date.now() + 60000),
+      });
+
+      const req = makeReq({
+        query: { email: 'test@b.com' },
+        session: {
+          verificationStep: 'loaded',
+          tempUser: { email: 'test@b.com', password: 'pwd' },
+        },
+      });
+      const { res, state } = makeRes();
+      await verifyEmailPageController(req, res, jest.fn());
+
+      expect(state.redirected).toBe(
+        '/auth/register?error=Verification+cancelled+due+to+page+refresh',
+      );
+      expect(req.session.tempUser).toBeUndefined();
+      expect(req.session.verificationStep).toBeUndefined();
+
+      // Ensure token was deleted
+      const [tok] = await db
+        .select()
+        .from(verification)
+        .where(eq(verification.id, 'v-temp'))
+        .limit(1);
+      expect(tok).toBeUndefined();
     });
   });
 
@@ -473,6 +532,10 @@ describe('verify-email controllers', () => {
       migrate();
       await db.delete(verification);
       await db.delete(user);
+    });
+
+    afterEach(() => {
+      delete (global as Record<string, unknown>).fetch;
     });
 
     it('redirects with error if email or code missing', async () => {
@@ -504,7 +567,7 @@ describe('verify-email controllers', () => {
       expect(state.redirected).toContain('error=Verification+code+has+expired');
     });
 
-    it('verifies email, deletes token, and redirects to /history on success', async () => {
+    it('verifies email, deletes token, and redirects to /history on success for existing user (login flow)', async () => {
       // Insert user and valid token using Drizzle
       await db.insert(user).values({
         id: 'u-test',
@@ -538,6 +601,128 @@ describe('verify-email controllers', () => {
         .where(eq(verification.id, 'v-val'))
         .limit(1);
       expect(tokRow).toBeUndefined();
+    });
+
+    it('creates user in Better Auth, signs in, and redirects to /history on success for new registration (deferred signup)', async () => {
+      // Insert valid token using Drizzle
+      await db.insert(verification).values({
+        id: 'v-val',
+        identifier: 'new@b.com',
+        value: '123456',
+        expiresAt: new Date(Date.now() + 60000), // Valid for 1 minute
+      });
+
+      // Mock signup API response, then Drizzle insert, then signin API response
+      let fetchCallCount = 0;
+      global.fetch = jest.fn().mockImplementation(async (url) => {
+        fetchCallCount++;
+        if (url.includes('/api/auth/sign-up/email')) {
+          // Simulate Better Auth creating the user in the database
+          await db.insert(user).values({
+            id: 'u-new',
+            name: 'New User',
+            email: 'new@b.com',
+            emailVerified: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          return { ok: true, json: async () => ({}) } as Response;
+        }
+        if (url.includes('/api/auth/sign-in/email')) {
+          return {
+            ok: true,
+            headers: {
+              get: () => 'better-auth.sid=cookie-value; Path=/; HttpOnly',
+            },
+            json: async () => ({}),
+          } as unknown as Response;
+        }
+        return { ok: false } as Response;
+      });
+
+      const req = makeReq({
+        body: { email: 'new@b.com', code: '123456' },
+        session: {
+          tempUser: { email: 'new@b.com', password: 'password123', name: 'New User' },
+        },
+      });
+      const { res, state } = makeRes();
+      await verifyEmailPostController(req, res, jest.fn());
+
+      expect(state.redirected).toBe('/history');
+      expect(fetchCallCount).toBe(2);
+
+      // Check user is now in database and is verified
+      const [userRow] = await db.select().from(user).where(eq(user.id, 'u-new')).limit(1);
+      expect(userRow).toBeDefined();
+      expect(userRow.emailVerified).toBe(true);
+
+      // Check token is deleted
+      const [tokRow] = await db
+        .select()
+        .from(verification)
+        .where(eq(verification.identifier, 'new@b.com'))
+        .limit(1);
+      expect(tokRow).toBeUndefined();
+
+      // Check cookies were forwarded
+      expect(state.headers['Set-Cookie']).toBe('better-auth.sid=cookie-value; Path=/; HttpOnly');
+    });
+
+    it('redirects with error if Better Auth signup fails', async () => {
+      await db.insert(verification).values({
+        id: 'v-val',
+        identifier: 'new@b.com',
+        value: '123456',
+        expiresAt: new Date(Date.now() + 60000),
+      });
+
+      global.fetch = jest.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ message: 'Password too weak' }),
+      } as Response);
+
+      const req = makeReq({
+        body: { email: 'new@b.com', code: '123456' },
+        session: {
+          tempUser: { email: 'new@b.com', password: 'weak', name: 'New User' },
+        },
+      });
+      const { res, state } = makeRes();
+      await verifyEmailPostController(req, res, jest.fn());
+
+      expect(state.redirected).toContain('error=Password%20too%20weak');
+    });
+
+    it('redirects with error if Better Auth signin fails', async () => {
+      await db.insert(verification).values({
+        id: 'v-val',
+        identifier: 'new@b.com',
+        value: '123456',
+        expiresAt: new Date(Date.now() + 60000),
+      });
+
+      global.fetch = jest.fn().mockImplementation(async (url) => {
+        if (url.includes('/api/auth/sign-up/email')) {
+          return { ok: true, json: async () => ({}) } as Response;
+        }
+        if (url.includes('/api/auth/sign-in/email')) {
+          return { ok: false, status: 401 } as Response;
+        }
+        return { ok: false } as Response;
+      });
+
+      const req = makeReq({
+        body: { email: 'new@b.com', code: '123456' },
+        session: {
+          tempUser: { email: 'new@b.com', password: 'pwd', name: 'New User' },
+        },
+      });
+      const { res, state } = makeRes();
+      await verifyEmailPostController(req, res, jest.fn());
+
+      expect(state.redirected).toContain('error=Failed+to+log+in+after+verification');
     });
 
     it('redirects with unexpected error on database throw', async () => {

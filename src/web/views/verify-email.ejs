@@ -145,6 +145,23 @@
     <script nonce="<%= typeof cspNonce !== 'undefined' ? cspNonce : '' %>">
       // Auto-focus on the code field
       document.getElementById('code')?.focus();
+
+      let isSubmitting = false;
+
+      // Disable beforeunload warning when submitting forms
+      document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', () => {
+          isSubmitting = true;
+        });
+      });
+
+      // Show confirmation dialog if the user refreshes or navigates away
+      window.addEventListener('beforeunload', (event) => {
+        if (!isSubmitting) {
+          event.preventDefault();
+          event.returnValue = '';
+        }
+      });
     </script>
   </body>
 </html>
