@@ -32,7 +32,7 @@
           </div>
           <div>
             <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Total: Leads</p>
-            <h3 class="text-2xl font-black text-gray-900 dark:text-white mt-0.5" data-count-to="<%= totalLeads %>">0</h3>
+            <h3 class="text-2xl font-black text-gray-900 dark:text-white mt-0.5" id="stat-total" data-count-to="<%= totalLeads %>" data-all-time="<%= totalLeads %>">0</h3>
           </div>
         </div>
 
@@ -45,7 +45,7 @@
           </div>
           <div>
             <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">HIGH Fit</p>
-            <h3 class="text-2xl font-black text-gray-900 dark:text-white mt-0.5" data-count-to="<%= highFit %>">0</h3>
+            <h3 class="text-2xl font-black text-gray-900 dark:text-white mt-0.5" id="stat-high" data-count-to="<%= highFit %>" data-all-time="<%= highFit %>">0</h3>
           </div>
         </div>
 
@@ -58,7 +58,7 @@
           </div>
           <div>
             <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">MEDIUM Fit</p>
-            <h3 class="text-2xl font-black text-gray-900 dark:text-white mt-0.5" data-count-to="<%= mediumFit %>">0</h3>
+            <h3 class="text-2xl font-black text-gray-900 dark:text-white mt-0.5" id="stat-medium" data-count-to="<%= mediumFit %>" data-all-time="<%= mediumFit %>">0</h3>
           </div>
         </div>
 
@@ -71,7 +71,7 @@
           </div>
           <div>
             <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">LOW Fit</p>
-            <h3 class="text-2xl font-black text-gray-900 dark:text-white mt-0.5" data-count-to="<%= lowFit %>">0</h3>
+            <h3 class="text-2xl font-black text-gray-900 dark:text-white mt-0.5" id="stat-low" data-count-to="<%= lowFit %>" data-all-time="<%= lowFit %>">0</h3>
           </div>
         </div>
 
@@ -84,223 +84,521 @@
           </div>
           <div>
             <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Avg Score</p>
-            <h3 class="text-2xl font-black text-gray-900 dark:text-white mt-0.5" data-count-to="<%= avgScore %>" data-is-decimal="true">0</h3>
+            <h3 class="text-2xl font-black text-gray-900 dark:text-white mt-0.5" id="stat-avg" data-count-to="<%= avgScore %>" data-all-time="<%= avgScore %>" data-is-decimal="true">0</h3>
           </div>
         </div>
 
       </div>
 
-      <!-- Toolbar -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Lead Scoring History</h2>
-        
-        <div class="flex items-center gap-3">
-          <!-- Sort Button -->
-          <button id="sort-score-button" type="button" data-sort-order="desc" class="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-300 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-900 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-850 active:bg-gray-100 dark:active:bg-gray-800 transition duration-150 focus:outline-none">
-            <svg class="w-4 h-4 text-gray-500 dark:text-gray-450" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-            </svg>
-            <span>Sort by Score (High → Low)</span>
-          </button>
-
-          <!-- Export All Emails -->
-          <% const hasEmail = results && results.some(r => r.outreach_email && (r.outreach_email.subject || r.outreach_email.body)); %>
-          <% if (hasEmail) { %>
-            <a href="/api/export-emails" id="export-emails-button" class="inline-flex items-center gap-2 px-4 py-2.5 bg-[#0029ff] text-white text-xs font-bold rounded-xl hover:bg-[#0021cc] active:bg-[#001999] shadow-sm shadow-[#0029ff]/10 dark:shadow-[#0029ff]/30 hover:shadow transition duration-150">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              <span>Export All Emails</span>
-            </a>
-          <% } %>
-
-          <!-- Clear My Data -->
-          <button id="clear-data-button" type="button" class="inline-flex items-center gap-2 px-4 py-2.5 border border-red-200 dark:border-red-900/30 rounded-xl bg-red-50 dark:bg-red-950/20 text-xs font-bold text-red-750 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 active:bg-red-200 transition duration-150 focus:outline-none">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-            <span>Clear my data</span>
-          </button>
-        </div>
+      <!-- View Selection Tabs -->
+      <div class="flex border-b border-gray-200 dark:border-gray-800 mb-6" id="history-tabs">
+        <button id="tab-all-time" type="button" class="px-5 py-2.5 text-sm font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-450 dark:hover:text-gray-200 focus:outline-none transition-all duration-150">
+          All Time
+        </button>
+        <button id="tab-batch" type="button" class="px-5 py-2.5 text-sm font-bold border-b-2 border-[#0029ff] text-[#0029ff] dark:border-blue-500 dark:text-blue-450 focus:outline-none transition-all duration-150">
+          By Batch
+        </button>
       </div>
 
-      <!-- History Table -->
-      <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-800 text-left">
-            <thead class="bg-gray-50 dark:bg-gray-950 sticky top-0 z-10">
-              <tr>
-                <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Record ID</th>
-                <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-                <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">ICP Score</th>
-                <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bucket</th>
-                <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Persona Fit</th>
-                <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
-              </tr>
-            </thead>
-            
-            <tbody class="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
-              <% if (results && results.length > 0) { %>
-                <% results.forEach(function(result) { %>
-                  <!-- Main row -->
-                  <tr data-record-id="<%= result._recordId %>" data-score="<%= result.icp_score || 0 %>" class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-850/50 transition-colors duration-150">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-400">
-                      <%= result._recordId %>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
-                      <%= result.profile_name %>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-50 dark:bg-blue-950/40 text-[#0029ff] dark:text-blue-400">
-                        <%= result.icp_score !== undefined ? result.icp_score : 'N/A' %>
-                      </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                      <%
-                        let badgeClass = 'bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-300';
-                        if (result.bucket === 'HIGH') badgeClass = 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400 border border-green-100 dark:border-green-900/30';
-                        else if (result.bucket === 'MEDIUM') badgeClass = 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400 border border-yellow-100 dark:border-yellow-900/30';
-                        else if (result.bucket === 'LOW') badgeClass = 'bg-orange-50 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400 border border-orange-100 dark:border-orange-900/30';
-                        else if (result.bucket === 'NOT FIT') badgeClass = 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400 border border-red-100 dark:border-red-900/30';
-                      %>
-                      <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold <%= badgeClass %>">
-                        <%= result.bucket || 'UNKNOWN' %>
-                      </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-bold">
-                      <%= result.persona_fit ? result.persona_fit.fit_score + '%' : 'N/A' %>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium space-x-3.5">
-                      <button type="button" class="details-toggle-btn text-[#0029ff] dark:text-blue-400 hover:text-[#0021cc] dark:hover:text-blue-300 text-xs font-bold focus:outline-none" aria-expanded="false" aria-controls="details-<%= result._recordId %>">
-                        Details
-                      </button>
-                      <a href="/api/download/<%= result._recordId %>" class="text-gray-500 dark:text-gray-450 hover:text-gray-900 dark:hover:text-white text-xs font-bold transition duration-150">
-                        Download
-                      </a>
-                    </td>
-                  </tr>
+      <!-- SECTION 1: ALL TIME VIEW -->
+      <div id="section-all-time" class="space-y-6 hidden">
+        <!-- Toolbar -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white">Lead Scoring History</h2>
+          
+          <div class="flex items-center gap-3">
+            <!-- Sort Button -->
+            <button id="sort-score-button" type="button" data-sort-order="desc" class="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-300 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-900 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-850 active:bg-gray-100 dark:active:bg-gray-800 transition duration-150 focus:outline-none">
+              <svg class="w-4 h-4 text-gray-500 dark:text-gray-450" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+              </svg>
+              <span>Sort by Score (High → Low)</span>
+            </button>
 
-                  <!-- Details Row -->
-                  <tr id="details-row-<%= result._recordId %>" class="hidden bg-gray-50/50 dark:bg-gray-950/30">
-                    <td colspan="6" class="px-6 py-0">
-                      <div id="details-<%= result._recordId %>" class="details-panel max-h-0 opacity-0 overflow-hidden transition-all duration-500 ease-in-out">
-                        <div class="py-6 border-t border-b border-gray-100 dark:border-gray-800 grid grid-cols-1 lg:grid-cols-2 gap-8">
-                          
-                          <!-- Left: Component Scores & Persona Fit -->
-                          <div class="space-y-6">
-                            <!-- Component Scores -->
-                            <div>
-                              <h4 class="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-3">Component Scores</h4>
-                              <div class="space-y-3 bg-white dark:bg-gray-950 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
-                                <% if (result.component_scores) { %>
-                                  <% Object.entries(result.component_scores).forEach(([key, value]) => { %>
-                                    <div>
-                                      <div class="flex justify-between text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
-                                        <span class="capitalize"><%= key.replace(/_/g, ' ') %></span>
-                                        <span><%= value %>%</span>
-                                      </div>
-                                      <div class="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden">
-                                        <div class="bg-[#0029ff] h-1.5 rounded-full progress-bar-fill transition-[width] duration-1000 ease-out" data-width="<%= value %>" style="width: 0%"></div>
-                                      </div>
-                                    </div>
-                                  <% }) %>
-                                <% } else { %>
-                                  <p class="text-xs text-gray-400 dark:text-gray-500 italic">No component scores available.</p>
-                                <% } %>
-                              </div>
-                            </div>
+            <!-- Export All Emails -->
+            <% const hasEmail = results && results.some(r => r.outreach_email && (r.outreach_email.subject || r.outreach_email.body)); %>
+            <% if (hasEmail) { %>
+              <a href="/api/export-emails" id="export-emails-button" class="inline-flex items-center gap-2 px-4 py-2.5 bg-[#0029ff] text-white text-xs font-bold rounded-xl hover:bg-[#0021cc] active:bg-[#001999] shadow-sm shadow-[#0029ff]/10 dark:shadow-[#0029ff]/30 hover:shadow transition duration-150">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <span>Export All Emails</span>
+              </a>
+            <% } %>
 
-                            <!-- Persona Fit Gaps -->
-                            <% if (result.persona_fit) { %>
+            <!-- Clear My Data -->
+            <button id="clear-data-button" type="button" class="inline-flex items-center gap-2 px-4 py-2.5 border border-red-200 dark:border-red-900/30 rounded-xl bg-red-50 dark:bg-red-950/20 text-xs font-bold text-red-750 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 active:bg-red-200 transition duration-150 focus:outline-none">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              <span>Clear my data</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- History Table -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-800 text-left">
+              <thead class="bg-gray-50 dark:bg-gray-950 sticky top-0 z-10">
+                <tr>
+                  <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Record ID</th>
+                  <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                  <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">ICP Score</th>
+                  <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bucket</th>
+                  <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Persona Fit</th>
+                  <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
+                </tr>
+              </thead>
+              
+              <tbody class="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
+                <% if (results && results.length > 0) { %>
+                  <% results.forEach(function(result) { %>
+                    <!-- Main row -->
+                    <tr data-record-id="<%= result._recordId %>" data-score="<%= result.icp_score || 0 %>" class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-850/50 transition-colors duration-150">
+                      <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-400">
+                        <%= result._recordId %>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
+                        <%= result.profile_name %>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-50 dark:bg-blue-950/40 text-[#0029ff] dark:text-blue-400">
+                          <%= result.icp_score !== undefined ? result.icp_score : 'N/A' %>
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <%
+                          let badgeClass = 'bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-300';
+                          if (result.bucket === 'HIGH') badgeClass = 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400 border border-green-100 dark:border-green-900/30';
+                          else if (result.bucket === 'MEDIUM') badgeClass = 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400 border border-yellow-100 dark:border-yellow-900/30';
+                          else if (result.bucket === 'LOW') badgeClass = 'bg-orange-50 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400 border border-orange-100 dark:border-orange-900/30';
+                          else if (result.bucket === 'NOT FIT') badgeClass = 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400 border border-red-100 dark:border-red-900/30';
+                        %>
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold <%= badgeClass %>">
+                          <%= result.bucket || 'UNKNOWN' %>
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-bold">
+                        <%= result.persona_fit ? result.persona_fit.fit_score + '%' : 'N/A' %>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium space-x-3.5">
+                        <button type="button" class="details-toggle-btn text-[#0029ff] dark:text-blue-400 hover:text-[#0021cc] dark:hover:text-blue-300 text-xs font-bold focus:outline-none" aria-expanded="false" aria-controls="details-<%= result._recordId %>">
+                          Details
+                        </button>
+                        <a href="/api/download/<%= result._recordId %>" class="text-gray-500 dark:text-gray-450 hover:text-gray-900 dark:hover:text-white text-xs font-bold transition duration-150">
+                          Download
+                        </a>
+                      </td>
+                    </tr>
+                    <!-- Details Row -->
+                    <tr id="details-row-<%= result._recordId %>" class="hidden bg-slate-50/40 dark:bg-gray-950/40">
+                      <td colspan="6" class="px-6 py-0">
+                        <div id="details-<%= result._recordId %>" class="details-panel max-h-0 opacity-0 overflow-hidden transition-all duration-500 ease-in-out">
+                          <div class="py-6 px-4 border-t border-b border-slate-100 dark:border-slate-900 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            
+                            <!-- Left: Component Scores & Persona Fit -->
+                            <div class="space-y-6">
+                              <!-- Component Scores -->
                               <div>
-                                <h4 class="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-2">Persona Fit Analysis (<%= result.persona_fit.persona_name %>)</h4>
-                                <div class="bg-white dark:bg-gray-950 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm space-y-3">
-                                  <div class="flex items-center gap-2">
-                                    <span class="text-sm font-bold text-gray-800 dark:text-gray-200">Fit Score: <%= result.persona_fit.fit_score %>%</span>
-                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#0029ff] dark:text-blue-400 border border-blue-100 dark:border-blue-900/30"><%= result.persona_fit.bucket %></span>
-                                  </div>
-                                  <% if (result.persona_fit.gap_analysis && result.persona_fit.gap_analysis.length > 0) { %>
-                                    <ul class="list-disc list-inside text-xs text-gray-600 dark:text-gray-450 space-y-1.5 pl-1">
-                                      <% result.persona_fit.gap_analysis.forEach(gap => { %>
-                                        <li><%= gap %></li>
-                                      <% }) %>
-                                    </ul>
+                                <h4 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Component Scores</h4>
+                                <div class="space-y-3 bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-slate-200/60 dark:border-slate-850/50 p-5 rounded-2xl shadow-sm">
+                                  <% if (result.component_scores) { %>
+                                    <% Object.entries(result.component_scores).forEach(([key, value]) => { %>
+                                      <div>
+                                        <div class="flex justify-between text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
+                                          <span class="capitalize"><%= key.replace(/_/g, ' ') %></span>
+                                          <span class="font-mono font-bold"><%= value %>%</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                                          <div class="bg-gradient-to-r from-blue-600 to-indigo-500 h-2 rounded-full progress-bar-fill transition-[width] duration-1000 ease-out" data-width="<%= value %>" style="width: 0%"></div>
+                                        </div>
+                                      </div>
+                                    <% }) %>
                                   <% } else { %>
-                                    <p class="text-xs text-gray-400 dark:text-gray-500 italic">No fit gaps identified.</p>
+                                    <p class="text-xs text-slate-400 dark:text-slate-500 italic">No component scores available.</p>
                                   <% } %>
                                 </div>
                               </div>
-                            <% } %>
-                          </div>
 
-                          <!-- Right: Explanation & Outreach Email -->
-                          <div class="space-y-6">
-                            <!-- Explanation -->
-                            <div>
-                              <h4 class="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-2">AI Scoring Explanation</h4>
-                              <div class="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 text-xs text-gray-600 dark:text-gray-350 leading-relaxed max-h-40 overflow-y-auto shadow-sm">
-                                <%= result.explanation || 'No explanation provided.' %>
-                              </div>
-                            </div>
-
-                            <!-- Email Draft -->
-                            <% if (result.outreach_email) { %>
-                              <div class="email-section" data-record-id="<%= result._recordId %>">
-                                <div class="flex items-center justify-between mb-2">
-                                  <h4 class="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider">Outreach Email Draft</h4>
-                                  <div class="flex items-center gap-2">
-                                    <button type="button" class="regenerate-email-btn text-xs text-[#0029ff] dark:text-blue-400 hover:underline font-bold focus:outline-none">
-                                      Regenerate Email
-                                    </button>
-                                    <button type="button" class="copy-email-btn relative inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-gray-300 dark:active:bg-gray-650 text-xs font-bold rounded-lg text-gray-700 dark:text-gray-350 transition duration-150 focus:outline-none">
-                                      <span>Copy</span>
-                                      <!-- Tooltip -->
-                                      <span class="copy-tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden bg-gray-900 text-white text-[10px] rounded-lg px-2 py-0.5 whitespace-nowrap opacity-0 transition-opacity duration-200">
-                                        Copied!
-                                      </span>
-                                    </button>
+                              <!-- Persona Fit Gaps -->
+                              <% if (result.persona_fit) { %>
+                                <div>
+                                  <h4 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Persona Fit Analysis (<%= result.persona_fit.persona_name %>)</h4>
+                                  <div class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-slate-200/60 dark:border-slate-850/50 p-5 rounded-2xl shadow-sm space-y-3.5">
+                                    <div class="flex items-center gap-2">
+                                      <span class="text-sm font-bold text-slate-800 dark:text-gray-200">Fit Score: <%= result.persona_fit.fit_score %>%</span>
+                                      <span class="px-2.5 py-0.5 text-xs font-bold rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"><%= result.persona_fit.bucket %></span>
+                                    </div>
+                                    <% if (result.persona_fit.gap_analysis && result.persona_fit.gap_analysis.length > 0) { %>
+                                      <ul class="text-xs text-slate-600 dark:text-gray-400 space-y-2 pl-1">
+                                        <% result.persona_fit.gap_analysis.forEach(gap => { %>
+                                          <li class="flex items-start gap-2">
+                                            <span class="text-blue-500 dark:text-blue-400 mt-0.5">•</span>
+                                            <span><%= gap %></span>
+                                          </li>
+                                        <% }) %>
+                                      </ul>
+                                    <% } else { %>
+                                      <p class="text-xs text-slate-400 dark:text-slate-500 italic">No fit gaps identified.</p>
+                                    <% } %>
                                   </div>
                                 </div>
-                                <div class="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 space-y-2 shadow-sm email-content-container transition-opacity duration-300">
-                                  <p class="text-xs font-bold text-gray-800 dark:text-gray-200">Subject: <span class="email-subject font-medium text-gray-600 dark:text-gray-400"><%= result.outreach_email.subject %></span></p>
-                                  <div class="email-body text-xs text-gray-600 dark:text-gray-350 leading-relaxed whitespace-pre-wrap max-h-44 overflow-y-auto border-t border-gray-100 dark:border-gray-800 pt-3 mt-2"><%= result.outreach_email.body %></div>
+                              <% } %>
+                            </div>
+
+                            <!-- Right: Explanation & Outreach Email -->
+                            <div class="space-y-6">
+                              <!-- Explanation -->
+                              <div>
+                                <h4 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">AI Scoring Explanation</h4>
+                                <div class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-slate-200/60 dark:border-slate-850/50 rounded-2xl p-5 text-xs text-slate-600 dark:text-gray-300 leading-relaxed shadow-sm min-h-[120px] flex flex-col justify-center">
+                                  <% if (result.explanation) { %>
+                                    <p class="whitespace-pre-wrap"><%= result.explanation %></p>
+                                  <% } else { %>
+                                    <div class="flex flex-col items-center justify-center text-center py-4">
+                                      <div class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-2.5">
+                                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                          <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                      </div>
+                                      <p class="text-xs font-bold text-slate-800 dark:text-white">No AI Explanation</p>
+                                      <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 max-w-xs">Configure your You.com API key in <strong>.env</strong> to enable search-grounded insights.</p>
+                                    </div>
+                                  <% } %>
                                 </div>
                               </div>
-                            <% } %>
-                          </div>
 
+                              <!-- Email Draft -->
+                              <% if (result.outreach_email) { %>
+                                <div class="email-section" data-record-id="<%= result._recordId %>">
+                                  <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Outreach Email Draft</h4>
+                                    <div class="flex items-center gap-3">
+                                      <button type="button" class="regenerate-email-btn text-xs text-[#0029ff] dark:text-blue-400 hover:text-blue-500 font-bold focus:outline-none transition-colors">
+                                        Regenerate Email
+                                      </button>
+                                      <button type="button" class="copy-email-btn relative inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-250 dark:hover:bg-slate-750 active:bg-slate-300 dark:active:bg-slate-700 text-xs font-bold rounded-xl text-slate-700 dark:text-gray-300 transition duration-150 focus:outline-none">
+                                        <span>Copy</span>
+                                        <span class="copy-tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden bg-gray-900 text-white text-[10px] rounded-lg px-2 py-0.5 whitespace-nowrap opacity-0 transition-opacity duration-200">
+                                          Copied!
+                                        </span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-slate-200/60 dark:border-slate-850/50 rounded-2xl p-5 space-y-3.5 shadow-sm email-content-container transition-opacity duration-300">
+                                    <div class="flex items-center gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800/60">
+                                      <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Subject:</span>
+                                      <span class="email-subject text-xs font-semibold text-slate-800 dark:text-white"><%= result.outreach_email.subject %></span>
+                                    </div>
+                                    <div class="email-body text-xs text-slate-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap max-h-44 overflow-y-auto pt-1"><%= result.outreach_email.body %></div>
+                                  </div>
+                                </div>
+                              <% } %>
+                            </div>
+
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="6" class="px-6 py-20 text-center">
+                      <div class="flex flex-col items-center gap-4">
+                        <div class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <svg class="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">No leads scored yet</p>
+                          <p class="text-xs text-gray-400 dark:text-gray-500 mb-4">Upload a JSON file on the home page to get started.</p>
+                          <a href="/" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white" style="background: linear-gradient(135deg, #0029ff, #0018c0);">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+                            </svg>
+                            Score your first lead
+                          </a>
                         </div>
                       </div>
                     </td>
                   </tr>
-
-                <% }); %>
-              <% } else { %>
-                <tr>
-                  <td colspan="6" class="px-6 py-20 text-center">
-                    <div class="flex flex-col items-center gap-4">
-                      <div class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                        <svg class="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">No leads scored yet</p>
-                        <p class="text-xs text-gray-400 dark:text-gray-500 mb-4">Upload a JSON file on the home page to get started.</p>
-                        <a href="/" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white" style="background: linear-gradient(135deg, #0029ff, #0018c0);">
-                          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
-                          </svg>
-                          Score your first lead
-                        </a>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              <% } %>
-            </tbody>
-          </table>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
         </div>
+      </div>
+
+      <!-- SECTION 2: BATCH LIST VIEW -->
+      <div id="section-batch-list" class="">
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-800 text-left">
+              <thead class="bg-gray-50 dark:bg-gray-950">
+                <tr>
+                  <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Batch Name</th>
+                  <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Run Date</th>
+                  <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Leads</th>
+                  <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Avg Score</th>
+                  <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fit Distribution</th>
+                  <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
+                <% if (batches && batches.length > 0) { %>
+                  <% batches.forEach(function(batch) { %>
+                    <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-850/50 transition-colors duration-150">
+                      <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
+                        <%= batch.name %>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        <%= new Date(batch.timestamp).toLocaleString() %>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-mono">
+                        <%= batch.summary.total %>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-50 dark:bg-blue-950/40 text-[#0029ff] dark:text-blue-400">
+                          <%= batch.summary.average %>
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm space-x-1.5">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold bg-green-50 text-green-750 dark:bg-green-950/20 dark:text-green-455 border border-green-100/30"><%= batch.summary.buckets.HIGH %> High</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold bg-yellow-50 text-yellow-750 dark:bg-yellow-950/20 dark:text-yellow-455 border border-yellow-100/30"><%= batch.summary.buckets.MEDIUM %> Med</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold bg-orange-50 text-orange-750 dark:bg-orange-950/20 dark:text-orange-455 border border-orange-100/30"><%= (batch.summary.buckets.LOW || 0) + (batch.summary.buckets['NOT FIT'] || 0) %> Low</span>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
+                        <button type="button" class="view-batch-btn text-[#0029ff] dark:text-blue-450 hover:text-[#0021cc] dark:hover:text-blue-300 text-xs font-bold focus:outline-none"
+                                data-batch-id="<%= batch.id %>"
+                                data-batch-name="<%= batch.name %>"
+                                data-total="<%= batch.summary.total %>"
+                                data-high="<%= batch.summary.buckets.HIGH %>"
+                                data-medium="<%= batch.summary.buckets.MEDIUM %>"
+                                data-low="<%= (batch.summary.buckets.LOW || 0) + (batch.summary.buckets['NOT FIT'] || 0) %>"
+                                data-avg="<%= batch.summary.average %>">
+                          View Details
+                        </button>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="6" class="px-6 py-20 text-center">
+                      <div class="flex flex-col items-center gap-4">
+                        <div class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <svg class="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">No batches found</p>
+                          <p class="text-xs text-gray-400 dark:text-gray-505 mb-4">Upload a JSON file on the home page to get started.</p>
+                          <a href="/" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white" style="background: linear-gradient(135deg, #0029ff, #0018c0);">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+                            </svg>
+                            Score your first lead
+                          </a>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: BATCH DETAILS VIEW -->
+      <div id="section-batch-details" class="hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <button id="btn-back-to-batches" type="button" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-900 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-850 active:bg-gray-100 dark:active:bg-gray-800 transition duration-150 focus:outline-none">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              <span>Back to Batches</span>
+            </button>
+            <h2 class="text-xl font-black text-gray-900 dark:text-white" id="batch-details-title">Batch Details</h2>
+          </div>
+        </div>
+
+        <!-- A table for each batch (hidden by default, shown when selected) -->
+        <% if (batches && batches.length > 0) { %>
+          <% batches.forEach(function(batch) { %>
+            <div id="batch-table-container-<%= batch.id %>" class="batch-table-container hidden">
+              <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-800 text-left">
+                    <thead class="bg-gray-50 dark:bg-gray-955 sticky top-0 z-10">
+                      <tr>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Record ID</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">ICP Score</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bucket</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Persona Fit</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900 animate-fade-in">
+                      <% batch.results.forEach(function(result) { %>
+                        <!-- Main row -->
+                        <tr data-record-id="<%= result._recordId %>" class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-850/50 transition-colors duration-150">
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-400">
+                            <%= result._recordId %>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
+                            <%= result.profile_name %>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-50 dark:bg-blue-950/40 text-[#0029ff] dark:text-blue-450">
+                              <%= result.icp_score !== undefined ? result.icp_score : 'N/A' %>
+                            </span>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <%
+                              let badgeClass = 'bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-300';
+                              if (result.bucket === 'HIGH') badgeClass = 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400 border border-green-100 dark:border-green-900/30';
+                              else if (result.bucket === 'MEDIUM') badgeClass = 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400 border border-yellow-100 dark:border-yellow-900/30';
+                              else if (result.bucket === 'LOW') badgeClass = 'bg-orange-50 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400 border border-orange-100 dark:border-orange-900/30';
+                              else if (result.bucket === 'NOT FIT') badgeClass = 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400 border border-red-100 dark:border-red-900/30';
+                            %>
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold <%= badgeClass %>">
+                              <%= result.bucket || 'UNKNOWN' %>
+                            </span>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-bold">
+                            <%= result.persona_fit ? result.persona_fit.fit_score + '%' : 'N/A' %>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium space-x-3.5">
+                            <button type="button" class="details-toggle-btn text-[#0029ff] dark:text-blue-455 hover:text-[#0021cc] dark:hover:text-blue-300 text-xs font-bold focus:outline-none" aria-expanded="false" aria-controls="details-<%= batch.id %>-<%= result._recordId %>">
+                              Details
+                            </button>
+                            <a href="/api/download/<%= result._recordId %>" class="text-gray-505 dark:text-gray-450 hover:text-gray-900 dark:hover:text-white text-xs font-bold transition duration-150">
+                              Download
+                            </a>
+                          </td>
+                        </tr>                        <!-- Details Row -->
+                        <tr id="details-row-<%= batch.id %>-<%= result._recordId %>" class="hidden bg-slate-50/40 dark:bg-gray-955/40">
+                          <td colspan="6" class="px-6 py-0">
+                            <div id="details-<%= batch.id %>-<%= result._recordId %>" class="details-panel max-h-0 opacity-0 overflow-hidden transition-all duration-500 ease-in-out">
+                              <div class="py-6 px-4 border-t border-b border-slate-100 dark:border-slate-900 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                
+                                <!-- Left: Component Scores & Persona Fit -->
+                                <div class="space-y-6">
+                                  <!-- Component Scores -->
+                                  <div>
+                                    <h4 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Component Scores</h4>
+                                    <div class="space-y-3 bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-slate-200/60 dark:border-slate-850/50 p-5 rounded-2xl shadow-sm">
+                                      <% if (result.component_scores) { %>
+                                        <% Object.entries(result.component_scores).forEach(([key, value]) => { %>
+                                          <div>
+                                            <div class="flex justify-between text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
+                                              <span class="capitalize"><%= key.replace(/_/g, ' ') %></span>
+                                              <span class="font-mono font-bold"><%= value %>%</span>
+                                            </div>
+                                            <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                                              <div class="bg-gradient-to-r from-blue-600 to-indigo-500 h-2 rounded-full progress-bar-fill transition-[width] duration-1000 ease-out" data-width="<%= value %>" style="width: 0%"></div>
+                                            </div>
+                                          </div>
+                                        <% }) %>
+                                      <% } else { %>
+                                        <p class="text-xs text-slate-400 dark:text-slate-500 italic">No component scores available.</p>
+                                      <% } %>
+                                    </div>
+                                  </div>
+
+                                  <!-- Persona Fit Gaps -->
+                                  <% if (result.persona_fit) { %>
+                                    <div>
+                                      <h4 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Persona Fit Analysis (<%= result.persona_fit.persona_name %>)</h4>
+                                      <div class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-slate-200/60 dark:border-slate-850/50 p-5 rounded-2xl shadow-sm space-y-3.5">
+                                        <div class="flex items-center gap-2">
+                                          <span class="text-sm font-bold text-slate-800 dark:text-gray-200">Fit Score: <%= result.persona_fit.fit_score %>%</span>
+                                          <span class="px-2.5 py-0.5 text-xs font-bold rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"><%= result.persona_fit.bucket %></span>
+                                        </div>
+                                        <% if (result.persona_fit.gap_analysis && result.persona_fit.gap_analysis.length > 0) { %>
+                                          <ul class="text-xs text-slate-600 dark:text-gray-400 space-y-2 pl-1">
+                                            <% result.persona_fit.gap_analysis.forEach(gap => { %>
+                                              <li class="flex items-start gap-2">
+                                                <span class="text-blue-500 dark:text-blue-400 mt-0.5">•</span>
+                                                <span><%= gap %></span>
+                                              </li>
+                                            <% }) %>
+                                          </ul>
+                                        <% } else { %>
+                                          <p class="text-xs text-slate-400 dark:text-slate-500 italic">No fit gaps identified.</p>
+                                        <% } %>
+                                      </div>
+                                    </div>
+                                  <% } %>
+                                </div>
+
+                                <!-- Right: Explanation & Outreach Email -->
+                                <div class="space-y-6">
+                                  <!-- Explanation -->
+                                  <div>
+                                    <h4 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">AI Scoring Explanation</h4>
+                                    <div class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-slate-200/60 dark:border-slate-850/50 rounded-2xl p-5 text-xs text-slate-600 dark:text-gray-300 leading-relaxed shadow-sm min-h-[120px] flex flex-col justify-center">
+                                      <% if (result.explanation) { %>
+                                        <p class="whitespace-pre-wrap"><%= result.explanation %></p>
+                                      <% } else { %>
+                                        <div class="flex flex-col items-center justify-center text-center py-4">
+                                          <div class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-2.5">
+                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                              <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                          </div>
+                                          <p class="text-xs font-bold text-slate-800 dark:text-white">No AI Explanation</p>
+                                          <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 max-w-xs">Configure your You.com API key in <strong>.env</strong> to enable search-grounded insights.</p>
+                                        </div>
+                                      <% } %>
+                                    </div>
+                                  </div>
+
+                                  <!-- Email Draft -->
+                                  <% if (result.outreach_email) { %>
+                                    <div class="email-section" data-record-id="<%= result._recordId %>">
+                                      <div class="flex items-center justify-between mb-3">
+                                        <h4 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Outreach Email Draft</h4>
+                                        <div class="flex items-center gap-3">
+                                          <button type="button" class="regenerate-email-btn text-xs text-[#0029ff] dark:text-blue-400 hover:text-blue-500 font-bold focus:outline-none transition-colors">
+                                            Regenerate Email
+                                          </button>
+                                          <button type="button" class="copy-email-btn relative inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-250 dark:hover:bg-slate-750 active:bg-slate-300 dark:active:bg-slate-700 text-xs font-bold rounded-xl text-slate-700 dark:text-gray-300 transition duration-150 focus:outline-none">
+                                            <span>Copy</span>
+                                            <span class="copy-tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden bg-gray-900 text-white text-[10px] rounded-lg px-2 py-0.5 whitespace-nowrap opacity-0 transition-opacity duration-200">
+                                              Copied!
+                                            </span>
+                                          </button>
+                                        </div>
+                                      </div>
+                                      <div class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-slate-200/60 dark:border-slate-850/50 rounded-2xl p-5 space-y-3.5 shadow-sm email-content-container transition-opacity duration-300">
+                                        <div class="flex items-center gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800/60">
+                                          <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Subject:</span>
+                                          <span class="email-subject text-xs font-semibold text-slate-800 dark:text-white"><%= result.outreach_email.subject %></span>
+                                        </div>
+                                        <div class="email-body text-xs text-slate-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap max-h-44 overflow-y-auto pt-1"><%= result.outreach_email.body %></div>
+                                      </div>
+                                    </div>
+                                  <% } %>
+                                </div>
+
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      <% }); %>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          <% }); %>
+        <% } %>
       </div>
 
     </main>

@@ -1,11 +1,13 @@
 /**
  * Experience signal extraction (F-04). Extracts companies from jobs, classifies each tier
- * (LLM when available, else config tier lists), and scores from tier-1/2 counts.
+ * (LLM with optional Serper search context when available, else config tier lists),
+ * and scores from tier-1/2 counts.
  */
 import type { AppConfig } from '../config/config.schema';
 import type { CompanyTier, ExperienceSignal, Tier } from '../domain/scoring.types';
 import type { Logger } from '../lib/logger/logger';
 import type { LLMClient } from '../llm/llm-client.interface';
+import { SerperService } from '../lib/search/serper';
 
 const BASE_SCORE = 60;
 const TIER1_WEIGHT = 10;
@@ -13,11 +15,18 @@ const TIER2_WEIGHT = 5;
 const TIER1_FULL_SCORE_COUNT = 3;
 
 export class ExperienceService {
+  private readonly serperService?: SerperService;
+
   constructor(
     private readonly config: AppConfig,
     private readonly logger: Logger,
     private readonly llm: LLMClient,
-  ) {}
+    serperApiKey?: string,
+  ) {
+    if (serperApiKey) {
+      this.serperService = new SerperService(serperApiKey, logger);
+    }
+  }
 
   async extract(jobs: string[] | undefined): Promise<ExperienceSignal> {
     const distinct = this.dedupe(this.extractCompanies(jobs ?? []));
@@ -59,7 +68,13 @@ export class ExperienceService {
 
   private async classifyTier(company: string): Promise<Tier> {
     if (this.llm.available) {
-      const result = await this.llm.classifyCompany(company);
+      let searchContext: string | undefined;
+      if (this.serperService) {
+        searchContext = await this.serperService.search(
+          `"${company}" company size headcount funding tier`,
+        );
+      }
+      const result = await this.llm.classifyCompany(company, searchContext);
       if (result.success && result.data) {
         return result.data;
       }

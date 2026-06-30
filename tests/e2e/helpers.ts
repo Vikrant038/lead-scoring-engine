@@ -17,10 +17,12 @@ export const SAMPLE_PERSONA = {
   skills_must_have: ['AI'],
 };
 
-/** Log in using the Demo User button. */
+/** Log in using the Demo User credentials. */
 export async function loginDemoUser(page: Page): Promise<void> {
   await page.goto('/auth/login');
-  await page.click('#demo-login-btn');
+  await page.fill('#email', 'demo@example.com');
+  await page.fill('#password', 'password');
+  await page.click('#sign-in-btn');
   await page.waitForURL((url) => url.pathname === '/');
 }
 
@@ -38,6 +40,7 @@ export async function uploadJson(page: Page, fileName: string, payload: unknown)
 export async function expectLeadInHistory(page: Page, name: string): Promise<void> {
   await expect(async () => {
     await page.goto('/history');
+    await page.click('#tab-all-time');
     await expect(page.getByText(name).first()).toBeVisible();
   }).toPass({ timeout: 15_000 });
 }

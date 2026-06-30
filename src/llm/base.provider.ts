@@ -21,7 +21,9 @@ const EXPLANATION_SYSTEM =
   'You explain lead scores. Given the JSON details, produce a 2-4 sentence explanation in a ' +
   'friendly, professional tone referencing education, companies, skills, and component scores.';
 const EMAIL_SYSTEM =
-  'You draft outreach emails. Return ONLY a JSON object with string fields "subject" and "body". ' +
+  'You draft outreach emails. Return ONLY a JSON object with string fields "subject" and "body".\n' +
+  'Example:\n{\n  "subject": "Connecting on Distributed Systems",\n  "body": "Hi [Name],\\n\\nI came across your profile..."\n}\n' +
+  'Important: Do NOT use double quotes (") inside the subject or body. Use single quotes (\') instead.\n' +
   'Adapt the tone as instructed.';
 
 function parseTier(text: string): Tier {
@@ -50,12 +52,14 @@ export abstract class BaseLlmProvider implements LLMClient {
   /** Provider-specific completion: send system+user prompts, return the assistant's raw text. */
   protected abstract request(system: string, user: string): Promise<LlmResult<string>>;
 
-  async classifyUniversity(name: string): Promise<LlmResult<Tier>> {
-    return this.classify(`University: ${name}`);
+  async classifyUniversity(name: string, searchContext?: string): Promise<LlmResult<Tier>> {
+    const context = searchContext ? `\nSearch Context:\n${searchContext}` : '';
+    return this.classify(`University: ${name}${context}`);
   }
 
-  async classifyCompany(name: string): Promise<LlmResult<Tier>> {
-    return this.classify(`Company: ${name}`);
+  async classifyCompany(name: string, searchContext?: string): Promise<LlmResult<Tier>> {
+    const context = searchContext ? `\nSearch Context:\n${searchContext}` : '';
+    return this.classify(`Company: ${name}${context}`);
   }
 
   async generateExplanation(input: ExplanationInput): Promise<LlmResult<string>> {
@@ -72,12 +76,15 @@ export abstract class BaseLlmProvider implements LLMClient {
       return { success: false, error: result.error ?? 'no response' };
     }
     try {
-      const parsed = JSON.parse(stripFences(result.data)) as Partial<OutreachEmail>;
+      const rawText = stripFences(result.data);
+      const parsed = JSON.parse(rawText) as Partial<OutreachEmail>;
       if (typeof parsed.subject === 'string' && typeof parsed.body === 'string') {
         return { success: true, data: { subject: parsed.subject, body: parsed.body } };
       }
+      this.logger.warn({ rawText, parsed }, 'email response missing subject/body');
       return { success: false, error: 'email response missing subject/body' };
-    } catch {
+    } catch (err) {
+      this.logger.warn({ rawText: result.data, err }, 'failed to parse email JSON');
       return { success: false, error: 'failed to parse email JSON' };
     }
   }
@@ -137,11 +144,21 @@ export abstract class BaseLlmProvider implements LLMClient {
         signal: controller.signal,
       });
       if (!response.ok) {
-        return { success: false, error: `HTTP ${response.status}` };
+        let details = '';
+        try {
+          details = await response.text();
+        } catch {
+          // ignore error reading response text
+        }
+        const errMsg = `HTTP ${response.status}${details ? ` - ${details}` : ''}`;
+        this.logger.warn({ url, errMsg }, 'LLM API request failed');
+        return { success: false, error: errMsg };
       }
       return { success: true, data: await response.json() };
     } catch (error) {
-      return { success: false, error: (error as Error).message };
+      const errMsg = (error as Error).message;
+      this.logger.error({ url, errMsg }, 'LLM API request encountered an error');
+      return { success: false, error: errMsg };
     } finally {
       clearTimeout(timer);
     }

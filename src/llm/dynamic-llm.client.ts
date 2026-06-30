@@ -5,6 +5,7 @@ import type { Logger } from '../lib/logger/logger';
 import { ConfigService } from '../config/config.service';
 import { GeminiProvider } from './gemini.provider';
 import { OpenAIProvider } from './openai.provider';
+import { OllamaProvider } from './ollama.provider';
 
 import type {
   LLMClient,
@@ -46,6 +47,10 @@ export class DynamicLlmClient implements LLMClient {
       if (key) {
         return new OpenAIProvider(key, DEFAULT_MODELS.openai, timeoutMs, this.logger);
       }
+    } else if (provider === 'ollama') {
+      const host = this.env.OLLAMA_HOST ?? 'http://localhost:11434';
+      const model = this.env.OLLAMA_MODEL ?? 'gemma2:2b';
+      return new OllamaProvider(host, model, timeoutMs, this.logger);
     }
 
     return this.defaultLlm;

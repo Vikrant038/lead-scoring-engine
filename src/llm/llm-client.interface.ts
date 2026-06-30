@@ -45,8 +45,8 @@ export interface GenerateProfilesInput {
 export interface LLMClient {
   /** Whether a real AI provider is configured. When false, callers use rule-based logic. */
   readonly available: boolean;
-  classifyUniversity(name: string): Promise<LlmResult<Tier>>;
-  classifyCompany(name: string): Promise<LlmResult<Tier>>;
+  classifyUniversity(name: string, searchContext?: string): Promise<LlmResult<Tier>>;
+  classifyCompany(name: string, searchContext?: string): Promise<LlmResult<Tier>>;
   generateExplanation(input: ExplanationInput): Promise<LlmResult<string>>;
   generateEmail(input: EmailInput): Promise<LlmResult<OutreachEmail>>;
   generateProfiles(input: GenerateProfilesInput): Promise<LlmResult<Profile[]>>;

@@ -10,6 +10,8 @@ import { GeminiProvider } from '../../src/llm/gemini.provider';
 import { OpenAIProvider } from '../../src/llm/openai.provider';
 import { NullProvider } from '../../src/llm/null.provider';
 import { createLlmClient } from '../../src/llm/llm-client.factory';
+import { YoucomProvider } from '../../src/llm/you.provider';
+import { OllamaProvider } from '../../src/llm/ollama.provider';
 import type { LlmResult } from '../../src/llm/llm-client.interface';
 
 const logger = createLogger({ level: 'error' }, new Writable({ write: (_c, _e, cb) => cb() }));
@@ -25,6 +27,7 @@ function mockReject(message: string): void {
 
 const geminiPayload = (text: string) => ({ candidates: [{ content: { parts: [{ text }] } }] });
 const openaiPayload = (content: string) => ({ choices: [{ message: { content } }] });
+const ollamaPayload = (content: string) => ({ message: { content } });
 
 beforeEach(() => {
   global.fetch = jest.fn() as unknown as typeof fetch;
@@ -38,6 +41,9 @@ function gemini(): GeminiProvider {
 }
 function openai(): OpenAIProvider {
   return new OpenAIProvider('test-key', 'gpt-4o-mini', 5000, logger);
+}
+function ollama(): OllamaProvider {
+  return new OllamaProvider('http://localhost:11434', 'gemma2:2b', 5000, logger);
 }
 
 describe('NullProvider', () => {
@@ -84,9 +90,12 @@ describe('createLlmClient factory', () => {
   it('should select the provider matching AI_PROVIDER + key', () => {
     const g = createLlmClient({ AI_PROVIDER: 'gemini', GEMINI_API_KEY: 'k' }, 5000, logger);
     const o = createLlmClient({ AI_PROVIDER: 'openai', OPENAI_API_KEY: 'k' }, 5000, logger);
+    const y = createLlmClient({ AI_PROVIDER: 'youcom', YOUCOM_API_KEY: 'k' }, 5000, logger);
     expect(g).toBeInstanceOf(GeminiProvider);
     expect(o).toBeInstanceOf(OpenAIProvider);
+    expect(y).toBeInstanceOf(YoucomProvider);
     expect(g.available).toBe(true);
+    expect(y.available).toBe(true);
   });
 
   it('should fall back to NullProvider when openai is selected without a key', () => {
@@ -95,6 +104,32 @@ describe('createLlmClient factory', () => {
 
   it('should default AI_PROVIDER to none when unset', () => {
     expect(createLlmClient({}, 5000, logger).available).toBe(false);
+  });
+
+  it('should auto-detect and use Gemini if AI_PROVIDER is none but GEMINI_API_KEY is present', () => {
+    const client = createLlmClient({ AI_PROVIDER: 'none', GEMINI_API_KEY: 'k' }, 5000, logger);
+    expect(client).toBeInstanceOf(GeminiProvider);
+  });
+
+  it('should fall back to Gemini if AI_PROVIDER is youcom but YOUCOM_API_KEY is missing and GEMINI_API_KEY is present', () => {
+    const client = createLlmClient({ AI_PROVIDER: 'youcom', GEMINI_API_KEY: 'k' }, 5000, logger);
+    expect(client).toBeInstanceOf(GeminiProvider);
+  });
+
+  it('should auto-detect and use Youcom if YOUCOM_API_KEY is present', () => {
+    const client = createLlmClient({ YOUCOM_API_KEY: 'k' }, 5000, logger);
+    expect(client).toBeInstanceOf(YoucomProvider);
+  });
+
+  it('should auto-detect and use OpenAI if OPENAI_API_KEY is present', () => {
+    const client = createLlmClient({ OPENAI_API_KEY: 'k' }, 5000, logger);
+    expect(client).toBeInstanceOf(OpenAIProvider);
+  });
+
+  it('should select Ollama provider when AI_PROVIDER is ollama', () => {
+    const client = createLlmClient({ AI_PROVIDER: 'ollama' }, 5000, logger);
+    expect(client).toBeInstanceOf(OllamaProvider);
+    expect(client.available).toBe(true);
   });
 });
 
@@ -260,5 +295,25 @@ describe('OpenAIProvider', () => {
       priority: 'Immediate Outreach',
     });
     expect(result).toEqual({ success: true, data: 'A strong lead with elite background.' });
+  });
+});
+
+describe('OllamaProvider', () => {
+  it('should classify a university tier from the response', async () => {
+    mockJson(ollamaPayload('This looks like tier_2.'));
+    await expect(ollama().classifyUniversity('University of Leeds')).resolves.toEqual({
+      success: true,
+      data: 'tier_2',
+    });
+  });
+
+  it('should fail gracefully on a network error', async () => {
+    mockReject('ECONNREFUSED');
+    await expect(ollama().classifyUniversity('X')).resolves.toMatchObject({ success: false });
+  });
+
+  it('should fail on an empty response body', async () => {
+    mockJson({ message: {} });
+    await expect(ollama().classifyUniversity('X')).resolves.toMatchObject({ success: false });
   });
 });

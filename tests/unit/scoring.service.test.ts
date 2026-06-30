@@ -86,6 +86,21 @@ describe('EducationService (F-03)', () => {
       score: 40,
     });
   });
+
+  it('should call SerperService when serperApiKey is configured', async () => {
+    const mockSearch = jest.fn().mockResolvedValue('prestige context');
+    const service = new EducationService(
+      defaultConfig,
+      silentLogger,
+      tierLlm('tier_1'),
+      'test-serper-key',
+    );
+    (service as any).serperService = { search: mockSearch };
+
+    const signal = await service.extract(['Obscure University']);
+    expect(mockSearch).toHaveBeenCalledWith('"Obscure University" ranking prestige tier');
+    expect(signal.tier).toBe('tier_1');
+  });
 });
 
 describe('ExperienceService (F-04)', () => {
@@ -135,6 +150,21 @@ describe('ExperienceService (F-04)', () => {
     const service = new ExperienceService(config, silentLogger, new NullProvider());
     const signal = await service.extract(['x @ Tiny LLC']);
     expect(signal.companies[0].tier).toBe('tier_3');
+  });
+
+  it('should call SerperService when serperApiKey is configured', async () => {
+    const mockSearch = jest.fn().mockResolvedValue('size context');
+    const service = new ExperienceService(
+      defaultConfig,
+      silentLogger,
+      tierLlm('tier_2'),
+      'test-serper-key',
+    );
+    (service as any).serperService = { search: mockSearch };
+
+    const signal = await service.extract(['a @ Foo']);
+    expect(mockSearch).toHaveBeenCalledWith('"Foo" company size headcount funding tier');
+    expect(signal.companies[0].tier).toBe('tier_2');
   });
 });
 

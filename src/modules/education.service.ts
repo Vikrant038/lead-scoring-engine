@@ -1,18 +1,27 @@
 /**
  * Education signal extraction (F-03). Parses the highest degree, derives the university name,
- * classifies its tier (LLM when available, else config tier lists), and maps it to a sub-score.
+ * classifies its tier (LLM with optional Serper search context when available, else config tier lists),
+ * and maps it to a sub-score.
  */
 import type { AppConfig } from '../config/config.schema';
 import type { EducationSignal, Tier } from '../domain/scoring.types';
 import type { Logger } from '../lib/logger/logger';
 import type { LLMClient } from '../llm/llm-client.interface';
+import { SerperService } from '../lib/search/serper';
 
 export class EducationService {
+  private readonly serperService?: SerperService;
+
   constructor(
     private readonly config: AppConfig,
     private readonly logger: Logger,
     private readonly llm: LLMClient,
-  ) {}
+    serperApiKey?: string,
+  ) {
+    if (serperApiKey) {
+      this.serperService = new SerperService(serperApiKey, logger);
+    }
+  }
 
   async extract(education: string[] | undefined): Promise<EducationSignal> {
     if (!education || education.length === 0) {
@@ -36,7 +45,11 @@ export class EducationService {
 
   private async classifyTier(university: string): Promise<Tier> {
     if (this.llm.available) {
-      const result = await this.llm.classifyUniversity(university);
+      let searchContext: string | undefined;
+      if (this.serperService) {
+        searchContext = await this.serperService.search(`"${university}" ranking prestige tier`);
+      }
+      const result = await this.llm.classifyUniversity(university, searchContext);
       if (result.success && result.data) {
         return result.data;
       }

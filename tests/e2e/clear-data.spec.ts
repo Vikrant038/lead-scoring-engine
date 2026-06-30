@@ -15,6 +15,7 @@ test.describe('Journey 5: clear my data (F-16-010)', () => {
 
     await expect(async () => {
       await page.goto('/history');
+      await page.click('#tab-all-time');
       await expect(page.getByText('No leads scored yet')).toBeVisible();
     }).toPass({ timeout: 10_000 });
   });

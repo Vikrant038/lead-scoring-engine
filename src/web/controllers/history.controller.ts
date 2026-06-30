@@ -24,6 +24,46 @@ export function summarise(results: ProfileResult[]): {
   return { total: results.length, buckets, average };
 }
 
+export interface BatchHistory {
+  id: string;
+  name: string;
+  timestamp: string;
+  results: ProfileResult[];
+  summary: {
+    total: number;
+    buckets: Record<string, number>;
+    average: number;
+  };
+}
+
+export function groupIntoBatches(results: ProfileResult[]): BatchHistory[] {
+  const groups = new Map<string, ProfileResult[]>();
+  for (const result of results) {
+    const batchId = result._batchId || result._sourceFile || 'unknown-batch';
+    if (!groups.has(batchId)) {
+      groups.set(batchId, []);
+    }
+    groups.get(batchId)!.push(result);
+  }
+
+  const batches: BatchHistory[] = [];
+  for (const [id, batchResults] of groups.entries()) {
+    batchResults.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+    const latestTimestamp = batchResults[0]?.timestamp || new Date().toISOString();
+    let name = batchResults[0]?._batchName || batchResults[0]?._sourceFile || 'Batch';
+    name = name.replace(/^\d+-/, '');
+
+    batches.push({
+      id,
+      name,
+      timestamp: latestTimestamp,
+      results: batchResults,
+      summary: summarise(batchResults),
+    });
+  }
+  return batches.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+}
+
 export const historyController =
   (ctx: WebContext): RequestHandler =>
   (req, res, next) => {
@@ -37,6 +77,7 @@ export const historyController =
         title: 'History',
         csrfToken: res.locals.csrfToken,
         results,
+        batches: groupIntoBatches(results),
         summary: summarise(results),
         emailIsDefault: !req.session.emailSettings,
       });

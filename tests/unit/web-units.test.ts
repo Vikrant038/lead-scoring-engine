@@ -3,7 +3,11 @@ import type { Request, Response } from 'express';
 import { ErrorCode } from '../../src/lib/errors/codes';
 import { ForbiddenError, NotFoundError } from '../../src/lib/errors/domain-errors';
 import { createErrorHandler } from '../../src/web/middleware/error-handler.middleware';
-import { historyController, summarise } from '../../src/web/controllers/history.controller';
+import {
+  historyController,
+  summarise,
+  groupIntoBatches,
+} from '../../src/web/controllers/history.controller';
 import { QueueService } from '../../src/web/services/queue.service';
 import type { ProfileResult } from '../../src/domain/result.types';
 import type { WebContext } from '../../src/web/context';
@@ -86,6 +90,69 @@ describe('summarise (history)', () => {
     } as unknown as WebContext;
     historyController(ctx)({ sessionID: 's' } as never, mockRes(), next);
     expect(next).toHaveBeenCalledWith(expect.any(Error));
+  });
+});
+
+describe('groupIntoBatches (history)', () => {
+  it('should group results by _batchId, _sourceFile, or fallback to unknown-batch', () => {
+    const results = [
+      {
+        _recordId: 'r1',
+        profile_name: 'Lead A',
+        status: 'PROCESSED',
+        bucket: 'HIGH',
+        icp_score: 90,
+        _batchId: 'b1',
+        _batchName: 'batch-one.json',
+        timestamp: '2026-06-30T10:00:00.000Z',
+      },
+      {
+        _recordId: 'r2',
+        profile_name: 'Lead B',
+        status: 'PROCESSED',
+        bucket: 'MEDIUM',
+        icp_score: 75,
+        _sourceFile: 'batch-two.json',
+        timestamp: '2026-06-30T10:05:00.000Z',
+      },
+      {
+        _recordId: 'r3',
+        profile_name: 'Lead C',
+        status: 'PROCESSED',
+        bucket: 'LOW',
+        icp_score: 50,
+        timestamp: '2026-06-30T10:10:00.000Z',
+      },
+    ] as ProfileResult[];
+
+    const batches = groupIntoBatches(results);
+
+    expect(batches).toHaveLength(3);
+    // Should sort batches by timestamp desc: r3 (no batch ID, fallback to unknown-batch), then r2, then r1
+    expect(batches[0].id).toBe('unknown-batch');
+    expect(batches[0].name).toBe('Batch');
+    expect(batches[0].results).toHaveLength(1);
+
+    expect(batches[1].id).toBe('batch-two.json');
+    expect(batches[1].name).toBe('batch-two.json');
+    expect(batches[1].results).toHaveLength(1);
+
+    expect(batches[2].id).toBe('b1');
+    expect(batches[2].name).toBe('batch-one.json');
+    expect(batches[2].results).toHaveLength(1);
+  });
+
+  it('should fallback to current time if timestamp is missing', () => {
+    const results = [
+      {
+        _recordId: 'r1',
+        profile_name: 'Lead A',
+        status: 'PROCESSED',
+        _batchId: 'b1',
+      } as unknown as ProfileResult,
+    ];
+    const batches = groupIntoBatches(results);
+    expect(batches[0].timestamp).toBeDefined();
   });
 });
 

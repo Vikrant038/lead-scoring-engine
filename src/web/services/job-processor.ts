@@ -24,6 +24,8 @@ export function createJobProcessor(ctx: WebContext): JobProcessor {
         persona,
         emailSettings: job.emailSettings,
       });
+      result._batchId = job.id;
+      result._batchName = job.fileName.replace(/^\d+-/, '');
       fileHandler.writeProfileResult(result);
       job.logs.push(`✓ ${result.profile_name}: ${result.icp_score ?? result.status}`);
     }

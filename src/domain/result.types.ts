@@ -30,6 +30,8 @@ export interface ResultSignals {
 export interface ProfileResult {
   _recordId: string;
   _sourceFile?: string;
+  _batchId?: string;
+  _batchName?: string;
   profile_name: string;
   status: ProcessingStatus;
   icp_score?: number;

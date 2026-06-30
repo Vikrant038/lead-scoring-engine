@@ -12,11 +12,11 @@ const FAILURE = { success: false as const, error: 'AI provider not configured' }
 export class NullProvider implements LLMClient {
   readonly available = false;
 
-  classifyUniversity(): Promise<LlmResult<Tier>> {
+  classifyUniversity(_name: string, _searchContext?: string): Promise<LlmResult<Tier>> {
     return Promise.resolve(FAILURE);
   }
 
-  classifyCompany(): Promise<LlmResult<Tier>> {
+  classifyCompany(_name: string, _searchContext?: string): Promise<LlmResult<Tier>> {
     return Promise.resolve(FAILURE);
   }
 

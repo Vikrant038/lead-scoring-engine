@@ -36,10 +36,11 @@ export function createProfiler(
   llm: LLMClient,
   extras: PipelineExtras = {},
 ): ProfilerService {
+  const serperApiKey = process.env.SERPER_API_KEY;
   return new ProfilerService(config, logger, {
     dataQuality: new DataQualityService(logger),
-    education: new EducationService(config, logger, llm),
-    experience: new ExperienceService(config, logger, llm),
+    education: new EducationService(config, logger, llm, serperApiKey),
+    experience: new ExperienceService(config, logger, llm, serperApiKey),
     thinking: new ThinkingQualityService(config, logger),
     scorer: new ScorerService(config, logger),
     personaMatcher: new PersonaMatcherService(config, logger),

@@ -44,6 +44,11 @@ describe('DynamicLlmClient', () => {
     expect(client.available).toBe(null2.available);
   });
 
+  it('resolves to Ollama provider when provider is "ollama"', () => {
+    const client = buildClient({ provider: 'ollama' });
+    expect(client.available).toBe(true);
+  });
+
   it('delegates classifyUniversity to the inner client', async () => {
     const client = buildClient();
     const result = await client.classifyUniversity('MIT');

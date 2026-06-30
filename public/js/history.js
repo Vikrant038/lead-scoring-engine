@@ -4,44 +4,154 @@ document.addEventListener('DOMContentLoaded', () => {
   const csrfToken = csrfTokenElement ? csrfTokenElement.getAttribute('content') : '';
 
   // --- Count-Up Stat Cards Animation ---
-  function animateCounters() {
-    const counters = document.querySelectorAll('[data-count-to]');
-    counters.forEach(counter => {
-      const target = parseFloat(counter.getAttribute('data-count-to')) || 0;
-      const isDecimal = counter.getAttribute('data-is-decimal') === 'true';
-      const duration = 1000; // 1 second animation duration
-      let startTime = null;
+  function animateCounter(counter) {
+    const target = parseFloat(counter.getAttribute('data-count-to')) || 0;
+    const isDecimal = counter.getAttribute('data-is-decimal') === 'true';
+    const duration = 500; // Snappy 0.5 second animation for interactive changes
+    let startTime = null;
 
-      function step(timestamp) {
-        if (!startTime) startTime = timestamp;
-        const progress = Math.min((timestamp - startTime) / duration, 1);
-        const current = progress * target;
+    function step(timestamp) {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      const current = progress * target;
 
-        if (isDecimal) {
-          counter.textContent = current.toFixed(1);
-        } else {
-          counter.textContent = Math.floor(current);
-        }
-
-        if (progress < 1) {
-          window.requestAnimationFrame(step);
-        } else {
-          counter.textContent = isDecimal ? target.toFixed(1) : target;
-        }
+      if (isDecimal) {
+        counter.textContent = current.toFixed(1);
+      } else {
+        counter.textContent = Math.floor(current);
       }
 
-      window.requestAnimationFrame(step);
-    });
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      } else {
+        counter.textContent = isDecimal ? target.toFixed(1) : target;
+      }
+    }
+
+    window.requestAnimationFrame(step);
+  }
+
+  function animateAllCounters() {
+    const counters = document.querySelectorAll('[data-count-to]');
+    counters.forEach(counter => animateCounter(counter));
   }
 
   // Trigger counters on load
-  animateCounters();
+  animateAllCounters();
 
-  // --- Sort by Score Toggle ---
+  // --- Tab Switching Logic (All Time vs By Batch) ---
+  const tabAllTime = document.getElementById('tab-all-time');
+  const tabBatch = document.getElementById('tab-batch');
+  const sectionAllTime = document.getElementById('section-all-time');
+  const sectionBatchList = document.getElementById('section-batch-list');
+  const sectionBatchDetails = document.getElementById('section-batch-details');
+
+  function updateTabStyles(activeTab, inactiveTab) {
+    activeTab.classList.add('border-[#0029ff]', 'text-[#0029ff]', 'dark:border-blue-500', 'dark:text-blue-450');
+    activeTab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'dark:text-gray-450', 'dark:hover:text-gray-200');
+
+    inactiveTab.classList.remove('border-[#0029ff]', 'text-[#0029ff]', 'dark:border-blue-500', 'dark:text-blue-450');
+    inactiveTab.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'dark:text-gray-450', 'dark:hover:text-gray-200');
+  }
+
+  function restoreAllTimeStats() {
+    const stats = ['stat-total', 'stat-high', 'stat-medium', 'stat-low', 'stat-avg'];
+    stats.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        const val = el.getAttribute('data-all-time');
+        el.setAttribute('data-count-to', val);
+        animateCounter(el);
+      }
+    });
+  }
+
+  function updateStats(total, high, medium, low, avg) {
+    const mappings = {
+      'stat-total': total,
+      'stat-high': high,
+      'stat-medium': medium,
+      'stat-low': low,
+      'stat-avg': avg
+    };
+    Object.entries(mappings).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.setAttribute('data-count-to', val);
+        animateCounter(el);
+      }
+    });
+  }
+
+  if (tabAllTime && tabBatch) {
+    tabAllTime.addEventListener('click', () => {
+      sectionAllTime.classList.remove('hidden');
+      sectionBatchList.classList.add('hidden');
+      sectionBatchDetails.classList.add('hidden');
+      updateTabStyles(tabAllTime, tabBatch);
+      restoreAllTimeStats();
+    });
+
+    tabBatch.addEventListener('click', () => {
+      sectionAllTime.classList.add('hidden');
+      sectionBatchList.classList.remove('hidden');
+      sectionBatchDetails.classList.add('hidden');
+      updateTabStyles(tabBatch, tabAllTime);
+      restoreAllTimeStats();
+    });
+  }
+
+  // --- Batch Detail View Trigger ---
+  const viewBatchBtns = document.querySelectorAll('.view-batch-btn');
+  viewBatchBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const batchId = btn.getAttribute('data-batch-id');
+      const batchName = btn.getAttribute('data-batch-name');
+      const total = btn.getAttribute('data-total');
+      const high = btn.getAttribute('data-high');
+      const medium = btn.getAttribute('data-medium');
+      const low = btn.getAttribute('data-low');
+      const avg = btn.getAttribute('data-avg');
+
+      // Hide batch list, show batch details
+      sectionBatchList.classList.add('hidden');
+      sectionBatchDetails.classList.remove('hidden');
+
+      // Hide all batch tables, show the selected one
+      const batchTables = document.querySelectorAll('.batch-table-container');
+      batchTables.forEach(t => t.classList.add('hidden'));
+
+      const targetTable = document.getElementById(`batch-table-container-${batchId}`);
+      if (targetTable) {
+        targetTable.classList.remove('hidden');
+      }
+
+      // Update title
+      const titleEl = document.getElementById('batch-details-title');
+      if (titleEl) {
+        titleEl.textContent = `Batch: ${batchName}`;
+      }
+
+      // Update stats
+      updateStats(total, high, medium, low, avg);
+    });
+  });
+
+  // --- Back to Batches Button ---
+  const btnBackToBatches = document.getElementById('btn-back-to-batches');
+  if (btnBackToBatches) {
+    btnBackToBatches.addEventListener('click', () => {
+      sectionBatchDetails.classList.add('hidden');
+      sectionBatchList.classList.remove('hidden');
+      restoreAllTimeStats();
+    });
+  }
+
+  // --- Sort by Score Toggle (All Time) ---
   const sortBtn = document.getElementById('sort-score-button');
   if (sortBtn) {
     sortBtn.addEventListener('click', () => {
-      const tableBody = document.querySelector('tbody');
+      const tableBody = sectionAllTime.querySelector('tbody');
       if (!tableBody) return;
 
       const rows = Array.from(tableBody.querySelectorAll('tr[data-score]'));
@@ -80,23 +190,43 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!detailsRow || !detailsPanel) return;
 
       const isExpanded = btn.getAttribute('aria-expanded') === 'true';
-      btn.setAttribute('aria-expanded', !isExpanded);
 
-      if (isExpanded) {
-        // Collapse panel
-        detailsPanel.style.maxHeight = '0px';
-        detailsPanel.style.opacity = '0';
-        setTimeout(() => {
-          detailsRow.classList.add('hidden');
-        }, 500);
-      } else {
-        // Expand panel
+      if (!isExpanded) {
+        // Collapse all other expanded panels (Accordion behavior)
+        detailsButtons.forEach(otherBtn => {
+          if (otherBtn === btn) return;
+          const otherIsExpanded = otherBtn.getAttribute('aria-expanded') === 'true';
+          if (otherIsExpanded) {
+            otherBtn.setAttribute('aria-expanded', 'false');
+            const otherRecordId = otherBtn.getAttribute('aria-controls').replace('details-', '');
+            const otherRow = document.getElementById(`details-row-${otherRecordId}`);
+            const otherPanel = document.getElementById(`details-${otherRecordId}`);
+            if (otherRow && otherPanel) {
+              otherPanel.style.maxHeight = '0px';
+              otherPanel.style.opacity = '0';
+              setTimeout(() => {
+                otherRow.classList.add('hidden');
+              }, 500);
+            }
+          }
+        });
+
+        // Expand clicked panel
+        btn.setAttribute('aria-expanded', 'true');
         detailsRow.classList.remove('hidden');
         setTimeout(() => {
           detailsPanel.style.maxHeight = `${detailsPanel.scrollHeight + 100}px`;
           detailsPanel.style.opacity = '1';
           observeProgressBars(detailsPanel);
         }, 50);
+      } else {
+        // Collapse clicked panel
+        btn.setAttribute('aria-expanded', 'false');
+        detailsPanel.style.maxHeight = '0px';
+        detailsPanel.style.opacity = '0';
+        setTimeout(() => {
+          detailsRow.classList.add('hidden');
+        }, 500);
       }
     });
   });
