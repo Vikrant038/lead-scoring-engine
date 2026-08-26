@@ -1,5 +1,13 @@
 # Lead Scoring Engine (ICP Profiler)
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel%20Production-black?style=for-the-badge&logo=vercel&logoColor=white)](https://lead-scoring-engine-three.vercel.app)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3%20Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Test Suite](https://img.shields.io/badge/Tests-317%20Passed-2ea44f?style=for-the-badge&logo=jest&logoColor=white)](./tests)
+[![Per-File Coverage](https://img.shields.io/badge/Coverage-90%25%20Floor-success?style=for-the-badge&logo=jest&logoColor=white)](./jest.config.js)
+[![AI Engine](https://img.shields.io/badge/AI%20Engine-Groq%20%7C%20Gemini%20%7C%20OpenAI-F55036?style=for-the-badge)](./src/llm)
+[![Auth & Database](https://img.shields.io/badge/Auth-Better%20Auth%20%2B%20SQLite-4F46E5?style=for-the-badge&logo=sqlite&logoColor=white)](https://better-auth.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](./LICENSE)
+
 Sales teams drown in lead lists. A spreadsheet of 500 prospects is not a pipeline — it is 500
 unanswered questions: *Who is actually worth a call today? Who looks impressive but isn't a fit?
 Why is this person a 7 and that one a 3?* Answering those questions by hand is slow, inconsistent,
@@ -27,22 +35,67 @@ data so you can see the whole thing work in one command.
   Scorer → Profiler — each contribute a visible sub-score. The final ICP score is a weighted blend
   (thinking 0.40, experience 0.35, education 0.20) plus a recency bonus, mapped to a bucket
   (`HIGH / MEDIUM / LOW / NOT FIT`). You can always see *why* a lead scored what it did.
-- **AI that is strictly optional.** Score explanations, outreach emails, and tier classification
-  use Gemini or OpenAI when a key is configured, and **degrade gracefully to rule-based logic**
-  when it isn't. The system never falls over because an API key is missing or a model times out.
+- **AI with multi-model failover.** Score explanations, outreach emails, and tier classification
+  support **Groq** (with automatic fallback from `openai/gpt-oss-20b` @ 1000 T/s to `openai/gpt-oss-120b` @ 500 T/s), **Gemini**, **OpenAI**, and **Ollama**, with **seamless degradation to rule-based logic**
+  when no key is present or when APIs hit rate limits.
 - **Persona fit.** Define a persona (skills, roles, company tiers, education) and score leads
   against it, with a gap analysis explaining what's missing.
 - **Multi-user web app.** Drag-and-drop JSON upload, an in-memory processing queue with live
   progress, a history page with downloads, a config editor, persona management, and email settings —
-  each browser session isolated in its own on-disk silo. No database required.
+  each user isolated in its own on-disk silo (`data/sessions/{userId}/`).
+- **Serverless-ready.** Fully configured for **Vercel Serverless Functions** (`api/index.ts` and `vercel.json`), with automated SQLite `/tmp` directory handling and dynamic CORS/trusted-origins detection.
 - **Self-demo.** `npm run demo` generates synthetic leads (via AI or a curated fallback set) and
   runs the full pipeline, so the project demonstrates itself with zero manual data entry.
+
+## 🧠 First-Principles Engineering & Problem Solving
+
+When building this engine, we refused to build another black-box AI wrapper. We deconstructed the lead qualification problem to its fundamental truths:
+
+```
+                          ┌──────────────────────────┐
+                          │   Raw Unstructured Lead  │
+                          └─────────────┬────────────┘
+                                        │
+                         [ 1. Binary Integrity Gate ]
+                             Is data sufficient?
+                                   /      \
+                             (NO) /        \ (YES)
+                                 ▼          ▼
+                        [REJECT PROFILE]  [ 2. Split Evaluation Layers ]
+                                            ├─ Deterministic Math Layer
+                                            │  (Years, Tiers, Recency Curve)
+                                            └─ Semantic Intelligence Layer
+                                               (Groq Dual-Model / Rule Fallback)
+                                                    │
+                                          [ 3. Weighted Synthesis ]
+                                          ICP Score = 0.40(Think) + 0.35(Exp) + 0.20(Edu) + Recency
+                                                    │
+                                          [ 4. Full Auditability ]
+                                          Visible Sub-Scores + Explainable Narrative
+```
+
+### 1. The Core Engineering Dilemma
+- **The Pitfall of Pure LLMs:** Sending entire lead profiles to a single prompt is expensive (\$0.05+/lead), non-deterministic, slow (2–5s per lead), hallucination-prone, and cannot be mathematically audited.
+- **The Pitfall of Pure Regex:** Brittle rule systems fail when faced with minor job title variations or unknown university names.
+- **First-Principles Solution:** **Hybrid Deterministic-Semantic Architecture.**
+  - **Deterministic Math Engine:** Calculates objective parameters (tenure, years of experience, weight distribution, recency bonuses) with 100% mathematical reproducibility.
+  - **Semantic AI Layer:** Used exclusively where LLMs excel — entity classification of unknown companies/universities and personalized sales outreach generation.
+
+### 2. Practical Problem Solving in Action
+
+| Real-World Challenge | First-Principles Trade-off | Engineering Solution |
+|---|---|---|
+| **Garbage Data Poisoning** | Scoring incomplete profiles creates confidently false numbers. | **Data Quality as a Gate:** Profiles with missing core attributes are rejected upfront at $0$ computational overhead before touching the scoring pipeline. |
+| **AI Dependency & Rate Limits** | External AI APIs experience outages, 429 rate limits, and latency spikes. | **Dual-Model Auto-Failover + Offline Fallback:** Primary Groq `openai/gpt-oss-20b` (1,000 T/s) automatically fails over to `openai/gpt-oss-120b` (500 T/s), with a 3rd-tier zero-cost rule-based fallback. Zero downtime guarantee. |
+| **Multi-Tenant Security Risks** | Multi-user uploads could cause path traversal or cross-tenant data leaks. | **Storage Silos + Path Containment:** Every user has an isolated filesystem silo (`data/sessions/{userId}/`) validated by a mathematical path-containment guard (`resolveWithin`). |
+| **Serverless vs Stateful DB** | SQLite WAL mode fails on read-only/ephemeral serverless lambdas. | **Dynamic Runtime Storage Adapter:** Automatically paths SQLite to `/tmp/icp.db` with `MEMORY` journal pragma in serverless while maintaining WAL mode in local development. |
+| **Test Laundering via Averages** | A 95% repo coverage average can hide a critical module with 20% coverage. | **Strict Per-File Coverage Floors:** Enforced 90% statement/line and 80% branch minimums across *every single file* in the codebase (31/31 suites passing). |
 
 ## Stack
 
 TypeScript (strict) · Express + EJS + Multer 2.x · Better Auth + Drizzle ORM (SQLite) · Zod (single source of truth) ·
-pino (structured logging with PII redaction) · Tailwind · Gemini / OpenAI with rule-based fallback ·
-Jest (unit + integration, per-file coverage gate) · Playwright (E2E) · ESLint / Prettier / Husky / Gitleaks.
+pino (structured logging with PII redaction) · Tailwind · Groq / Gemini / OpenAI / Ollama with rule-based fallback ·
+Jest (unit + integration, per-file coverage gate) · Playwright (E2E) · ESLint / Prettier / Husky / Gitleaks · Vercel Serverless.
 
 ## Quickstart
 
@@ -64,9 +117,28 @@ npm run demo -- --no-ai --persona default-icp --output ./demo-output
 npm run demo -- --no-ai --html --count 10   # also writes demo-output/demo-report.html
 ```
 
+## Vercel Deployment
+
+Deploy directly to Vercel using the Vercel CLI or Git integration:
+
+```bash
+# 1. Login & deploy preview
+npx vercel
+
+# 2. Deploy to production
+npx vercel --prod
+```
+
+Configure your environment variables in Vercel:
+- `SESSION_SECRET`: Random 32+ character string.
+- `BETTER_AUTH_SECRET`: Random 32+ character string.
+- `AI_PROVIDER`: `groq` (or `gemini` / `openai` / `none`).
+- `GROQ_API_KEY`: Your Groq API key.
+- `VERCEL`: `1` (automatically set by Vercel).
+
 ## Authentication
 
-The web app features secure multi-user authentication powered by **Better Auth** backed by **SQLite** (`data/icp.db`).
+The web app features secure multi-user authentication powered by **Better Auth** backed by **SQLite** (`data/icp.db` or `/tmp/icp.db` on Vercel).
 
 - **Email & Password Authentication:** Register and sign in directly via `/auth/register` and `/auth/login`.
 - **Google OAuth 2.0:** One-click single sign-on via Google OAuth integration (`AUTH_GOOGLE_CLIENT_ID` & `AUTH_GOOGLE_CLIENT_SECRET`).

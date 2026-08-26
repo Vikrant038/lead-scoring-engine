@@ -83,14 +83,20 @@ Route → Controller → Service → Repository → filesystem
 ```typescript
 interface LLMClient {
   readonly available: boolean;
-  classifyUniversity(name: string): Promise<LlmResult<Tier>>;
-  classifyCompany(name: string): Promise<LlmResult<Tier>>;
+  classifyUniversity(name: string, searchContext?: string): Promise<LlmResult<Tier>>;
+  classifyCompany(name: string, searchContext?: string): Promise<LlmResult<Tier>>;
   generateExplanation(input: ExplanationInput): Promise<LlmResult<string>>;
-  generateEmail(input: OutreachEmailInput): Promise<LlmResult<OutreachEmail>>;
-  generateProfiles(prompt: string, count: number): Promise<LlmResult<LeadProfile[]>>;
+  generateEmail(input: EmailInput): Promise<LlmResult<OutreachEmail>>;
+  generateProfiles(input: GenerateProfilesInput): Promise<LlmResult<Profile[]>>;
 }
 ```
-Providers: `GeminiProvider`, `OpenAIProvider`, `NullProvider`. Factory picks from `AI_PROVIDER` + key.
+Providers: `GroqProvider` (with automatic failover from `openai/gpt-oss-20b` to `openai/gpt-oss-120b`), `GeminiProvider`, `OpenAIProvider`, `OllamaProvider`, `NullProvider`. Factory picks from `AI_PROVIDER` + key.
+
+### Serverless Architecture (Vercel)
+- Entry point: `api/index.ts` (lazy Express handler bootstrap).
+- Configuration: `vercel.json` maps all routes to `/api/index.ts`.
+- Database: Automatically paths to `/tmp/icp.db` on Vercel runtime.
+- Dynamic origins: Better Auth dynamically trusts `process.env.VERCEL_URL`.
 
 ---
 
@@ -98,7 +104,7 @@ Providers: `GeminiProvider`, `OpenAIProvider`, `NullProvider`. Factory picks fro
 - **Schema:** `src/config/config.schema.ts` → `AppConfig` type.
 - **Runtime service:** `src/config/config.service.ts` (`ConfigService` — mutable, validated on edit).
 - **Web Config Editor** (`/config`) edits live config as validated JSON — applies to scoring immediately.
-- **Env vars:** `.env.example` — `AI_PROVIDER`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `SESSION_SECRET`, `PORT`, `LOG_LEVEL`.
+- **Env vars:** `.env.example` — `AI_PROVIDER`, `GROQ_API_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `SESSION_SECRET`, `PORT`, `LOG_LEVEL`.
 
 ---
 

@@ -23,11 +23,12 @@
 - **Security:** `helmet` (GUARDRAILS 2.8), **custom synchronizer-token CSRF** middleware backed by session (GUARDRAILS 2.5 — avoids deprecated `csurf`), `path.basename` path-guard (SEC-05/06).
 - **Validation:** **Zod** schemas as single source of truth (CODING 1.10) for profiles, personas, config, email-settings, upload.
 - **Logging:** **pino** structured logger with redaction array + `correlationId` + `durationMs` (GUARDRAILS 6.4 / CODING 4.7).
-- **LLM:** `@google/generative-ai`, `openai`; `LLMClient` interface; `NullProvider` fallback. MSW mocks in tests.
-- **Testing:** **Jest + ts-jest** (unit/integration, AAA, factories, fake timers), **Playwright** (E2E top-5 journeys), **MSW** (mock Gemini/OpenAI). Coverage gate: services ≥80%, utils ≥90% (CODING 7.1, Commercial).
+- **LLM:** `@google/generative-ai`, `openai`, **Groq Provider** (`openai/gpt-oss-20b` with automated fallback to `openai/gpt-oss-120b`), Ollama, `LLMClient` interface; `NullProvider` fallback.
+- **Serverless Deploy:** **Vercel Serverless Functions** (`api/index.ts` & `vercel.json`), automated ephemeral SQLite support (`/tmp/icp.db`), and dynamic CORS origin integration.
+- **Testing:** **Jest + ts-jest** (unit/integration, AAA, factories, fake timers), **Playwright** (E2E top-5 journeys), **MSW** (mock Gemini/OpenAI/Groq). Coverage gate: strict per-file floor (lines ≥90%, branches ≥80%).
 - **Quality gates:** ESLint (`typescript-eslint`, `eslint-plugin-compat`) + Prettier + Husky/lint-staged (lint, format, `tsc`, **gitleaks**) — GUARDRAILS 4.1.
 - **CI:** `.github/workflows/` → `ci.yml` (lint/tsc/unit), `security.yml` (SAST/SCA/secret-scan/SBOM/dependency-review), `e2e.yml` (Playwright). PR blocks per GUARDRAILS 4.2.
-- **DI:** manual constructor injection; composition roots in `cli/index.ts`, `web/server.ts`, `demo.ts` (CODING 2.3). No DI framework.
+- **DI:** manual constructor injection; composition roots in `cli/index.ts`, `web/server.ts`, `demo.ts`, `api/index.ts` (CODING 2.3). No DI framework.
 - **CSS:** Tailwind (build step → `public/`), accent `#0029ff` (USA-01).
 
 ---

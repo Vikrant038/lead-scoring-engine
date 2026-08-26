@@ -4,6 +4,11 @@ import type { Tier } from '../domain/scoring.types';
 import type { Logger } from '../lib/logger/logger';
 import { ConfigService } from '../config/config.service';
 import { GeminiProvider } from './gemini.provider';
+import {
+  GroqProvider,
+  GROQ_DEFAULT_PRIMARY_MODEL,
+  GROQ_DEFAULT_FALLBACK_MODEL,
+} from './groq.provider';
 import { OpenAIProvider } from './openai.provider';
 import { OllamaProvider } from './ollama.provider';
 
@@ -19,6 +24,7 @@ import type { LlmEnv } from './llm-client.factory';
 const DEFAULT_MODELS = {
   gemini: 'gemini-1.5-flash',
   openai: 'gpt-4o-mini',
+  groq: GROQ_DEFAULT_PRIMARY_MODEL,
 } as const;
 
 export class DynamicLlmClient implements LLMClient {
@@ -35,7 +41,15 @@ export class DynamicLlmClient implements LLMClient {
     const timeoutMs = config.llm?.timeout ?? 15000;
     const apiKey = config.llm?.apiKey;
 
-    if (provider === 'gemini') {
+    if (provider === 'groq') {
+      const key = apiKey || this.env.GROQ_API_KEY;
+      /* istanbul ignore next -- requires real GROQ_API_KEY in CI */
+      if (key) {
+        const primaryModel = this.env.GROQ_MODEL ?? GROQ_DEFAULT_PRIMARY_MODEL;
+        const fallbackModel = this.env.GROQ_FALLBACK_MODEL ?? GROQ_DEFAULT_FALLBACK_MODEL;
+        return new GroqProvider(key, primaryModel, fallbackModel, timeoutMs, this.logger);
+      }
+    } else if (provider === 'gemini') {
       const key = apiKey || this.env.GEMINI_API_KEY;
       /* istanbul ignore next -- requires real GEMINI_API_KEY in CI */
       if (key) {

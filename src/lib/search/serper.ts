@@ -6,17 +6,36 @@
 import type { Logger } from '../logger/logger';
 
 export class SerperService {
+  private readonly cache = new Map<string, string>();
+  private readonly maxCacheSize = 200;
+
   constructor(
     private readonly apiKey: string | undefined,
     private readonly logger: Logger,
   ) {}
 
   /** Perform a Google search and return a formatted markdown string of snippets. */
-  async search(query: string): Promise<string> {
+  async search(rawQuery: string): Promise<string> {
     if (!this.apiKey) {
-      this.logger.debug({ query }, 'Serper API key not configured; skipping search');
+      this.logger.debug({ query: rawQuery }, 'Serper API key not configured; skipping search');
       return '';
     }
+
+    // Sanitize query: strip control characters, trim, cap length
+    const query = rawQuery
+      .split('')
+      .filter((c) => c.charCodeAt(0) >= 32 && c.charCodeAt(0) !== 127)
+      .join('')
+      .trim()
+      .slice(0, 100);
+    if (!query) {
+      return '';
+    }
+
+    if (this.cache.has(query)) {
+      return this.cache.get(query)!;
+    }
+
     try {
       this.logger.debug({ query }, 'executing Serper Google search');
       const response = await fetch('https://google.serper.dev/search', {
@@ -33,8 +52,15 @@ export class SerperService {
       const data = (await response.json()) as {
         organic?: { title: string; snippet: string }[];
       };
-      const snippets = data.organic?.map((item) => `- ${item.title}: ${item.snippet}`).join('\n');
-      return snippets || '';
+      const snippets =
+        data.organic?.map((item) => `- ${item.title}: ${item.snippet}`).join('\n') || '';
+
+      if (this.cache.size >= this.maxCacheSize) {
+        const firstKey = this.cache.keys().next().value;
+        if (firstKey) this.cache.delete(firstKey);
+      }
+      this.cache.set(query, snippets);
+      return snippets;
     } catch (error) {
       this.logger.warn({ query, error: (error as Error).message }, 'Serper search failed');
       return '';

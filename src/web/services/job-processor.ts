@@ -18,6 +18,14 @@ export function createJobProcessor(ctx: WebContext): JobProcessor {
     const persona = resolvePersona(ctx, job.personaId);
 
     const profiles = fileHandler.readSingleFile(job.fileName);
+    if (profiles.length === 0) {
+      job.progress = 100;
+      job.status = 'completed';
+      job.endTime = new Date().toISOString();
+      job.logs.push('No profiles to process in uploaded file');
+      return;
+    }
+
     for (let index = 0; index < profiles.length; index += 1) {
       job.progress = Math.round((index / profiles.length) * 100);
       const result = await profiler.profile(profiles[index], {

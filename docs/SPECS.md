@@ -1,5 +1,12 @@
 # Technical Specification & Portfolio Showcase — ICP Lead Scoring Engine
 
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3%20Strict-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Test Suite](https://img.shields.io/badge/Tests-317%20Passed-2ea44f?style=flat-square&logo=jest&logoColor=white)](../tests)
+[![Coverage Floor](https://img.shields.io/badge/Coverage-90%25%20Per--File-success?style=flat-square&logo=jest&logoColor=white)](../jest.config.js)
+[![Vercel Deployment](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=flat-square&logo=vercel&logoColor=white)](https://lead-scoring-engine-three.vercel.app)
+[![Auth](https://img.shields.io/badge/Auth-Better%20Auth%20%2B%20SQLite-4F46E5?style=flat-square)](https://better-auth.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](../LICENSE)
+
 > **Commercial-Grade Multi-User Lead Qualification & AI Outreach Generation Engine**  
 > Built with TypeScript (Strict), Express, Better Auth (SQLite), Drizzle ORM, Zod, and Gemini/OpenAI AI Strategy Pattern.
 

@@ -53,13 +53,19 @@ export abstract class BaseLlmProvider implements LLMClient {
   protected abstract request(system: string, user: string): Promise<LlmResult<string>>;
 
   async classifyUniversity(name: string, searchContext?: string): Promise<LlmResult<Tier>> {
-    const context = searchContext ? `\nSearch Context:\n${searchContext}` : '';
-    return this.classify(`University: ${name}${context}`);
+    const cleanName = name.slice(0, 200).replace(/[\r\n]/g, ' ');
+    const context = searchContext
+      ? `\n<search_context>\n${searchContext.slice(0, 1000)}\n</search_context>`
+      : '';
+    return this.classify(`<entity type="university">${cleanName}</entity>${context}`);
   }
 
   async classifyCompany(name: string, searchContext?: string): Promise<LlmResult<Tier>> {
-    const context = searchContext ? `\nSearch Context:\n${searchContext}` : '';
-    return this.classify(`Company: ${name}${context}`);
+    const cleanName = name.slice(0, 200).replace(/[\r\n]/g, ' ');
+    const context = searchContext
+      ? `\n<search_context>\n${searchContext.slice(0, 1000)}\n</search_context>`
+      : '';
+    return this.classify(`<entity type="company">${cleanName}</entity>${context}`);
   }
 
   async generateExplanation(input: ExplanationInput): Promise<LlmResult<string>> {

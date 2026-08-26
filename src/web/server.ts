@@ -21,6 +21,12 @@ import { correlationId } from './middleware/correlation-id.middleware';
 import { createSessionMiddleware } from './middleware/session.middleware';
 import { securityHeaders } from './middleware/security-headers.middleware';
 import { ensureCsrfToken, verifyCsrf } from './middleware/csrf.middleware';
+import {
+  globalLimiter,
+  authLimiter,
+  uploadLimiter,
+  emailRegenerateLimiter,
+} from './middleware/rate-limit.middleware';
 import { createErrorHandler } from './middleware/error-handler.middleware';
 import { QueueService } from './services/queue.service';
 import { createJobProcessor } from './services/job-processor';
@@ -29,10 +35,11 @@ import { DynamicLlmClient } from '../llm/dynamic-llm.client';
 import type { WebContext } from './context';
 import { migrate, wipeStaleDemoUser, seedDemoUserViaApi } from '../db/migrate';
 import { auth } from '../lib/auth/auth';
-import { toNodeHandler, fromNodeHeaders } from 'better-auth/node';
+import { toNodeHandler, fromNodeHeaders } from '../lib/auth/better-auth-esm';
 
 const VIEWS_DIR = path.join(process.cwd(), 'src', 'web', 'views');
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
+const DOCS_DIR = path.join(process.cwd(), 'docs');
 const SESSIONS_ROOT = path.join(process.cwd(), 'data', 'sessions');
 
 export function buildContext(config: AppConfig, logger: Logger, llm: LLMClient): WebContext {
@@ -59,7 +66,9 @@ export function createApp(ctx: WebContext, sessionSecret: string): Express {
   app.set('views', VIEWS_DIR);
 
   app.use(securityHeaders);
+  app.use(globalLimiter); // rate-limit baseline: 100 req / 15 min / IP
   app.use(express.static(PUBLIC_DIR));
+  app.use('/docs', express.static(DOCS_DIR));
   app.use(correlationId);
   app.use(createSessionMiddleware(sessionSecret));
   app.use(ensureCsrfToken);
@@ -67,6 +76,9 @@ export function createApp(ctx: WebContext, sessionSecret: string): Express {
   app.use(express.urlencoded({ extended: true }));
   app.all('/api/auth/*', toNodeHandler(auth));
   app.use(verifyCsrf); // GUARDRAILS 2.5: guard every mutating route (AJAX sends X-CSRF-Token)
+  app.use('/auth/*', authLimiter); // brute-force protection: 10 req / 15 min / IP
+  app.use(['/api/upload', '/api/upload-persona'], uploadLimiter); // abuse protection: 30 req / 15 min / IP
+  app.use('/api/regenerate-email', emailRegenerateLimiter); // AI-cost control: 20 req / 15 min / IP
   app.use(async (req, res, next) => {
     try {
       const selectedPersona = req.session?.selectedPersona ?? 'default-icp';

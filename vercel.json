@@ -1,0 +1,17 @@
+{
+  "functions": {
+    "api/index.ts": {
+      "includeFiles": "{node_modules/@better-auth/**,node_modules/better-auth/**,node_modules/better-sqlite3/**,src/web/views/**,data/**,public/**,docs/**}"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/public/(.*)",
+      "destination": "/public/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/api/index"
+    }
+  ]
+}

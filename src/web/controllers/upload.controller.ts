@@ -2,7 +2,7 @@
  * Upload + page controllers (F-10). Thin: delegate to the upload service / render views.
  */
 import type { RequestHandler } from 'express';
-import { ValidationError } from '../../lib/errors/domain-errors';
+import { UnauthorizedError, ValidationError } from '../../lib/errors/domain-errors';
 import type { WebContext } from '../context';
 import type { UploadService } from '../services/upload.service';
 
@@ -25,7 +25,10 @@ export const uploadController =
       if (!req.file) {
         throw new ValidationError('file', 'no file uploaded');
       }
-      const userId = req.user!.id;
+      const userId = req.user?.id;
+      if (!userId) {
+        throw new UnauthorizedError();
+      }
       const job = upload.accept(
         userId,
         req.file,
@@ -48,7 +51,10 @@ export const demoBatchController =
       const path = require('node:path') as typeof import('node:path');
       const demoPath = path.join(process.cwd(), 'data', 'demo-fallback.json');
       const buffer = fs.readFileSync(demoPath);
-      const userId = req.user!.id;
+      const userId = req.user?.id;
+      if (!userId) {
+        throw new UnauthorizedError();
+      }
       const job = upload.accept(
         userId,
         { originalname: 'demo-fallback.json', buffer },

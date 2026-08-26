@@ -3,6 +3,7 @@
  * downloads are path-guarded and confined to that directory (SEC-06).
  */
 import type { RequestHandler } from 'express';
+import { UnauthorizedError } from '../../lib/errors/domain-errors';
 import { FileHandlerRepository } from '../../repositories/file-handler.repository';
 import type { Bucket, ProfileResult } from '../../domain/result.types';
 import type { WebContext } from '../context';
@@ -68,7 +69,10 @@ export const historyController =
   (ctx: WebContext): RequestHandler =>
   (req, res, next) => {
     try {
-      const userId = req.user!.id;
+      const userId = req.user?.id;
+      if (!userId) {
+        throw new UnauthorizedError();
+      }
       const dirs = ctx.sessionStore.ensure(userId);
       const results = new FileHandlerRepository(dirs, ctx.logger)
         .listResults()
@@ -90,7 +94,10 @@ export const downloadController =
   (ctx: WebContext): RequestHandler =>
   (req, res, next) => {
     try {
-      const userId = req.user!.id;
+      const userId = req.user?.id;
+      if (!userId) {
+        throw new UnauthorizedError();
+      }
       const dirs = ctx.sessionStore.ensure(userId);
       const filePath = new FileHandlerRepository(dirs, ctx.logger).resultPath(req.params.recordId);
       res.download(filePath);

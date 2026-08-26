@@ -44,6 +44,9 @@ export const savePersonaController =
   (ctx: WebContext): RequestHandler =>
   (req, res, next) => {
     try {
+      if (sanitiseId(req.params.id) === 'default-icp') {
+        throw new ValidationError('persona', 'cannot modify default system persona');
+      }
       ctx.personaRepo.save(req.params.id, req.body);
       res.json({ success: true });
     } catch (error) {
@@ -65,6 +68,9 @@ export const uploadPersonaController =
         throw new ValidationError('file', 'persona file is not valid JSON');
       }
       const id = sanitiseId(req.file.originalname.replace(/\.json$/i, ''));
+      if (id === 'default-icp') {
+        throw new ValidationError('persona', 'cannot overwrite default system persona');
+      }
       ctx.personaRepo.save(id, raw);
       res.json({ success: true, id });
     } catch (error) {

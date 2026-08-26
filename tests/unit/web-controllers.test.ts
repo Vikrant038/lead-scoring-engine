@@ -39,6 +39,12 @@ import {
   regenerateEmailController,
   saveEmailSettingsController,
 } from '../../src/web/controllers/email.controller';
+import {
+  historyController,
+  downloadController,
+} from '../../src/web/controllers/history.controller';
+import { jobController, queueController } from '../../src/web/controllers/job.controller';
+import { QueueService } from '../../src/web/services/queue.service';
 import { silentLogger } from '../helpers/test-deps';
 
 const PERSONA = { name: 'CTO', description: 'tech leaders', skills_must_have: ['AI'] };
@@ -68,7 +74,11 @@ function mockRes(): MockRes {
       this.body = payload;
       return this;
     },
-    render(view: string, data: Record<string, unknown>) {
+    redirect(url: string) {
+      this.headers.location = url;
+      return this;
+    },
+    render(view: string, data?: Record<string, unknown>) {
       this.view = view;
       this.viewData = data;
       return this;
@@ -124,6 +134,7 @@ describe('web controllers (unit)', () => {
       sessionStore: new SessionStoreRepository(path.join(root, 'sessions'), silentLogger),
       personaRepo: new PersonaRepository(path.join(root, 'personas'), silentLogger),
       emailGenerator: new OutreachEmailService(llm, silentLogger),
+      queue: new QueueService(jest.fn(), silentLogger),
     } as WebContext;
   });
   afterEach(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -411,6 +422,82 @@ describe('web controllers (unit)', () => {
       const res = mockRes();
       demoBatchController(uploadService)(req({ user: { id: 'u1' } as any }), res, jest.fn());
       expect(res.body).toEqual({ success: true, jobId: 'demoJob1' });
+    });
+
+    it('rejects unauthorized requests across controllers when req.user is absent', async () => {
+      const uploadService = { accept: jest.fn() } as any;
+      const next = jest.fn();
+
+      uploadController(uploadService)(req({ user: undefined }), mockRes(), next);
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
+
+      next.mockReset();
+      demoBatchController(uploadService)(req({ user: undefined }), mockRes(), next);
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
+
+      next.mockReset();
+      await regenerateEmailController(ctx)(req({ user: undefined }), mockRes(), next);
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
+
+      next.mockReset();
+      exportEmailsController(ctx)(req({ user: undefined }), mockRes(), next);
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
+
+      next.mockReset();
+      clearDataController(ctx)(req({ user: undefined }), mockRes(), next);
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
+
+      next.mockReset();
+      historyController(ctx)(req({ user: undefined }), mockRes(), next);
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
+
+      next.mockReset();
+      downloadController(ctx)(
+        req({ user: undefined, params: { recordId: 'r1' } }),
+        mockRes(),
+        next,
+      );
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
+
+      next.mockReset();
+      jobController(ctx)(req({ user: undefined, params: { jobId: 'j1' } }), mockRes(), next);
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
+
+      next.mockReset();
+      queueController(ctx)(req({ user: undefined }), mockRes(), next);
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it('protects default-icp from save and upload in persona controller', () => {
+      const next = jest.fn();
+      savePersonaController(ctx)(req({ params: { id: 'default-icp' }, body: {} }), mockRes(), next);
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
+
+      next.mockReset();
+      uploadPersonaController(ctx)(
+        req({ file: { originalname: 'default-icp.json', buffer: Buffer.from('{}') } as any }),
+        mockRes(),
+        next,
+      );
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it('returns jobs in jobController and queueController when authenticated', () => {
+      const mockJob = { id: 'j1', sessionId: 'u1', status: 'completed' } as any;
+      ctx.queue.get = jest.fn().mockReturnValue(mockJob);
+      ctx.queue.list = jest.fn().mockReturnValue([mockJob]);
+
+      const res = mockRes();
+      jobController(ctx)(
+        req({ user: { id: 'u1' } as any, params: { jobId: 'j1' } }),
+        res,
+        jest.fn(),
+      );
+      expect(res.body).toEqual(mockJob);
+
+      const res2 = mockRes();
+      queueController(ctx)(req({ user: { id: 'u1' } as any }), res2, jest.fn());
+      expect(res2.body).toEqual({ jobs: [mockJob] });
     });
   });
 });

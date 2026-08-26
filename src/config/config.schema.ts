@@ -57,7 +57,7 @@ export const appConfigSchema = z
       pollIntervalMs: z.number().positive(),
     }),
     llm: z.object({
-      provider: z.enum(['none', 'gemini', 'openai', 'youcom', 'ollama']),
+      provider: z.enum(['none', 'gemini', 'openai', 'youcom', 'ollama', 'groq']),
       timeout: z.number().positive(),
       apiKey: z.string().optional(),
     }),

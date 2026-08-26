@@ -10,9 +10,10 @@
  * Better Auth's `trustedOrigins` config (see src/lib/auth/auth.ts).
  */
 import 'dotenv/config';
+import { randomInt, randomUUID } from 'node:crypto';
 import type { RequestHandler } from 'express';
 import { auth } from '../../lib/auth/auth';
-import { fromNodeHeaders } from 'better-auth/node';
+import { fromNodeHeaders } from '../../lib/auth/better-auth-esm';
 import { db } from '../../db/connection';
 import { user, verification } from '../../db/schema';
 import { eq, and } from 'drizzle-orm';
@@ -117,10 +118,10 @@ export const loginPostController: RequestHandler = async (req, res) => {
     const [userRecord] = await db.select().from(user).where(eq(user.email, email)).limit(1);
 
     if (userRecord && !userRecord.emailVerified) {
-      // Generate and send code
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      // Generate and send code using CSPRNG
+      const code = randomInt(100000, 1000000).toString();
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
-      const id = Math.random().toString(36).substring(2);
+      const id = randomUUID();
 
       await db.delete(verification).where(eq(verification.identifier, email));
       await db.insert(verification).values({
@@ -180,10 +181,10 @@ export const registerPostController: RequestHandler = async (req, res) => {
       name: name ?? email,
     };
 
-    // Generate and send 6-digit verification code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate and send 6-digit verification code using CSPRNG
+    const code = randomInt(100000, 1000000).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
-    const id = Math.random().toString(36).substring(2);
+    const id = randomUUID();
 
     await db.delete(verification).where(eq(verification.identifier, email));
     await db.insert(verification).values({
@@ -368,9 +369,9 @@ export const resendVerificationPostController: RequestHandler = async (req, res)
   }
 
   try {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const code = randomInt(100000, 1000000).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
-    const id = Math.random().toString(36).substring(2);
+    const id = randomUUID();
 
     await db.delete(verification).where(eq(verification.identifier, email));
 

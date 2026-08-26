@@ -14,9 +14,9 @@ export class ConfigService {
     this.current = structuredClone(initial);
   }
 
-  /** The configuration currently in effect. */
+  /** The configuration currently in effect (deep cloned to prevent mutation). */
   get(): AppConfig {
-    return this.current;
+    return structuredClone(this.current);
   }
 
   /**

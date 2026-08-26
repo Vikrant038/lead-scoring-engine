@@ -80,4 +80,21 @@ describe('createJobProcessor (integration)', () => {
     expect(result.persona_fit).toBeUndefined();
     expect(job.status).toBe('completed');
   });
+
+  it('should handle empty profiles file gracefully', async () => {
+    const dirs = sessionStore.ensure('s1');
+    fs.writeFileSync(path.join(dirs.inputDir, 'empty.json'), '[]');
+    const job: Job = {
+      id: 'jEmpty',
+      sessionId: 's1',
+      fileName: 'empty.json',
+      status: 'queued',
+      progress: 0,
+      logs: [],
+      startTime: '',
+    };
+    await createJobProcessor(ctx)(job);
+    expect(job.status).toBe('completed');
+    expect(job.progress).toBe(100);
+  });
 });

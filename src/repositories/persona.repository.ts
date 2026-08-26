@@ -87,6 +87,9 @@ export class PersonaRepository {
   /** Soft-delete a persona by moving it to `.trash/` (FR-12-007). */
   delete(id: string): void {
     const safeId = sanitiseId(id);
+    if (safeId === 'default-icp') {
+      throw new ValidationError('persona', 'cannot delete default system persona');
+    }
     const source = resolveWithin(this.personasDir, `${safeId}.json`);
     if (!fs.existsSync(source)) {
       throw new NotFoundError('Persona', id);

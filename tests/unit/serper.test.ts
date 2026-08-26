@@ -76,4 +76,34 @@ describe('SerperService', () => {
     const result = await service.search('Google');
     expect(result).toBe('');
   });
+
+  it('should return empty string if sanitized query is empty', async () => {
+    const service = new SerperService('test-key', silentLogger);
+    const result = await service.search('\x00\x01\x1F');
+    expect(result).toBe('');
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('should cache search results and evict when exceeding maxCacheSize', async () => {
+    const service = new SerperService('test-key', silentLogger);
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ organic: [{ title: 'T', snippet: 'S' }] }),
+    });
+
+    const res1 = await service.search('Query 1');
+    expect(res1).toBe('- T: S');
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+
+    // Second call for Query 1 hits cache
+    const res2 = await service.search('Query 1');
+    expect(res2).toBe('- T: S');
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+
+    // Add many entries to test eviction
+    for (let i = 0; i < 205; i++) {
+      await service.search(`Query_${i}`);
+    }
+    expect(mockFetch).toHaveBeenCalledTimes(206);
+  });
 });

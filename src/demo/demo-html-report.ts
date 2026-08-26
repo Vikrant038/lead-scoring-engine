@@ -176,7 +176,7 @@ export function buildHtmlReport(result: RunBatchResult, persona?: string): strin
 
     <!-- Footer -->
     <div style="margin-top:40px;text-align:center;font-size:12px;color:#9ca3af" class="card">
-      Built with ❤️ · <a href="https://github.com" style="color:#0029ff;text-decoration:none">ICP Profiler on GitHub</a> · ${now}
+      &copy; ${new Date().getFullYear()} ICP Profiler · <a href="https://github.com/Vikrant038/lead-scoring-engine" target="_blank" rel="noopener noreferrer" style="color:#0029ff;text-decoration:none">GitHub Repository</a> · ${now}
     </div>
 
   </div>

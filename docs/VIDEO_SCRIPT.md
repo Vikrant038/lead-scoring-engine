@@ -63,7 +63,7 @@ Click on **Config** in the nav. Show the LLM provider dropdown.
 
 ## Key Links to include in description
 
-- GitHub: `https://github.com/YOUR_HANDLE/lead-scoring-engine`
+- GitHub: `https://github.com/Vikrant038/lead-scoring-engine`
 - Live Demo: `https://YOUR_APP.onrender.com`
 
 ---

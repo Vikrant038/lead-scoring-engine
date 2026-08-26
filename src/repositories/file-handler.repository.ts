@@ -32,6 +32,22 @@ export interface FileHandlerPaths {
   outputDir: string;
 }
 
+function sanitizeJson<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map((item) => sanitizeJson(item)) as unknown as T;
+  }
+  const clean: Record<string, unknown> = {};
+  for (const [key, val] of Object.entries(obj)) {
+    if (key !== '__proto__' && key !== 'constructor' && key !== 'prototype') {
+      clean[key] = sanitizeJson(val);
+    }
+  }
+  return clean as T;
+}
+
 export class FileHandlerRepository {
   constructor(
     private readonly paths: FileHandlerPaths,
@@ -64,7 +80,7 @@ export class FileHandlerRepository {
       let data: unknown;
       try {
         const raw = fs.readFileSync(resolveWithin(this.paths.inputDir, file), 'utf8');
-        data = JSON.parse(raw);
+        data = sanitizeJson(JSON.parse(raw));
       } catch (error) {
         this.logger.warn({ file, error: (error as Error).message }, 'skipping invalid JSON file');
         continue;
@@ -89,7 +105,7 @@ export class FileHandlerRepository {
       return [];
     }
     const stem = fileName.replace(/\.json$/i, '');
-    const data: unknown = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const data: unknown = sanitizeJson(JSON.parse(fs.readFileSync(filePath, 'utf8')));
     if (Array.isArray(data)) {
       return data.map((entry, index) =>
         this.annotate(entry, this.recordIdFor(entry, `${stem}_${index}`), fileName),
@@ -126,7 +142,7 @@ export class FileHandlerRepository {
     if (!fs.existsSync(target)) {
       throw new NotFoundError('Result', recordId);
     }
-    return JSON.parse(fs.readFileSync(target, 'utf8')) as ProfileResult;
+    return sanitizeJson(JSON.parse(fs.readFileSync(target, 'utf8'))) as ProfileResult;
   }
 
   /** Resolve the absolute file path for a record id's result (for streamed downloads). */
@@ -148,7 +164,7 @@ export class FileHandlerRepository {
       .filter((file) => file.endsWith('_result.json'))
       .map((file) => {
         const raw = fs.readFileSync(path.join(this.paths.outputDir, file), 'utf8');
-        return JSON.parse(raw) as ProfileResult;
+        return sanitizeJson(JSON.parse(raw)) as ProfileResult;
       });
   }
 
@@ -194,7 +210,11 @@ export class FileHandlerRepository {
     if (field === undefined || field === null) {
       return '';
     }
-    const value = String(field);
+    let value = String(field);
+    // Neutralize CSV formula injection (DDE / Excel formula execution)
+    if (/^[=+\-@\t\r]/.test(value)) {
+      value = `'${value}`;
+    }
     if (/[",\n\r]/.test(value)) {
       return `"${value.replace(/"/g, '""')}"`;
     }

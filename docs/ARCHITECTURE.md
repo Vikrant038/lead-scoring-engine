@@ -17,7 +17,12 @@ quietly stops believing it. The moment a scoring tool can't justify itself, it b
 first design constraint wasn't technical. It was: **every score must be explainable, and the system
 must keep working even when the fancy parts (the AI) are unavailable.**
 
-Everything else follows from that.
+### 🔬 First-Principles Decomposition
+We broke the domain down into core fundamental truths:
+1. **A lead is not an arbitrary score; it is a vector of verifiable signals:** Education reputation, career progression velocity, and demonstrated cognitive/leadership capability.
+2. **Deterministic arithmetic outlives AI stochasticity:** Math is deterministic ($2+2=4$ always). If you delegate simple scoring math to an LLM, you introduce non-deterministic hallucinations, latency, and API costs. Keep arithmetic in code and semantics in AI.
+3. **Data Quality is a gatekeeper, not a grade:** Grading incomplete data generates confident nonsense. Corrupted data must be stopped at the perimeter with zero processing overhead.
+4. **Resilience requires multi-tier failovers:** Never rely on a single vendor or API model. Design self-healing pipelines that cascade across models and offline fallbacks seamlessly.
 
 ---
 
@@ -34,6 +39,8 @@ Everything else follows from that.
    shared mutable state a crafted request can reach.
 5. **The build itself is governed.** The AI that wrote this code was bound by four standards
    documents and a phased process with explicit approval gates (see §8).
+6. **Per-file coverage accountability.** Global test averages hide bad modules. Strict 90% statement
+   and 80% branch coverage minimums apply to every single file.
 
 ---
 

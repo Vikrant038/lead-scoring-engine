@@ -10,8 +10,7 @@
  * calls from auth.controller.ts (which include an Origin header) are accepted.
  */
 import 'dotenv/config';
-import { betterAuth } from 'better-auth';
-import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { betterAuth, drizzleAdapter } from './better-auth-esm';
 import { db } from '../../db/connection';
 import * as schema from '../../db/schema';
 import { sendEmail } from '../email/fake-mailer';
@@ -33,14 +32,22 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
   };
 }
 
+const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined;
+const customOrigins = process.env.TRUSTED_ORIGINS ? process.env.TRUSTED_ORIGINS.split(',') : [];
+
 export const auth = betterAuth({
   secret:
     process.env.BETTER_AUTH_SECRET ||
     'local_dev_fallback_secret_must_be_replaced_in_production_environment_12345',
   baseURL,
-  // Allow both the public URL and localhost so server-side fetch() from
-  // auth.controller.ts (which adds Origin: baseURL) passes the origin check.
-  trustedOrigins: [baseURL, 'http://localhost:3000', 'http://127.0.0.1:3000'],
+  // Allow public URL, localhost, Vercel deployments, and configured custom origins
+  trustedOrigins: [
+    baseURL,
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    ...(vercelUrl ? [vercelUrl] : []),
+    ...customOrigins,
+  ],
   database: drizzleAdapter(db, { provider: 'sqlite', schema }),
   emailAndPassword: {
     enabled: true,

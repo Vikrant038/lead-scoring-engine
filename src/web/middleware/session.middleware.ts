@@ -11,6 +11,7 @@ export function createSessionMiddleware(secret: string): RequestHandler {
     secret,
     resave: false,
     saveUninitialized: true, // a session is needed up-front to hold the CSRF token
+    proxy: process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL),
     cookie: {
       httpOnly: true,
       sameSite: 'strict',

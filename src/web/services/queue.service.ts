@@ -40,6 +40,7 @@ export class QueueService {
     private readonly processor: JobProcessor,
     private readonly logger: Logger,
     private readonly maxPending = 50,
+    private readonly maxRetained = 100,
   ) {}
 
   enqueue(newJob: NewJob): Job {
@@ -59,16 +60,46 @@ export class QueueService {
       startTime: new Date().toISOString(),
     };
     this.items.push(job);
+    this.pruneOldJobs();
     void this.run();
     return job;
   }
 
-  get(id: string): Job | undefined {
-    return this.items.find((job) => job.id === id);
+  get(id: string, sessionId?: string): Job | undefined {
+    const job = this.items.find((j) => j.id === id);
+    if (!job) return undefined;
+    if (sessionId && job.sessionId !== sessionId) return undefined;
+    return job;
   }
 
-  list(): Job[] {
+  list(sessionId?: string): Job[] {
+    if (sessionId) {
+      return this.items.filter((job) => job.sessionId === sessionId);
+    }
     return this.items;
+  }
+
+  private pruneOldJobs(): void {
+    if (this.items.length <= this.maxRetained) {
+      return;
+    }
+    // Evict oldest completed or errored jobs
+    const finishedIndices: number[] = [];
+    this.items.forEach((job, idx) => {
+      if (job.status === 'completed' || job.status === 'error') {
+        finishedIndices.push(idx);
+      }
+    });
+    while (this.items.length > this.maxRetained && finishedIndices.length > 0) {
+      const idxToRemove = finishedIndices.shift();
+      if (idxToRemove !== undefined) {
+        this.items.splice(idxToRemove, 1);
+        // Adjust remaining indices
+        for (let i = 0; i < finishedIndices.length; i++) {
+          finishedIndices[i] -= 1;
+        }
+      }
+    }
   }
 
   private async run(): Promise<void> {

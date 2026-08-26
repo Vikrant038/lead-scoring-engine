@@ -32,15 +32,20 @@ cp .env.example .env
 
 | Variable          | Scope  | Required?                     | Purpose                                                            |
 | ----------------- | ------ | ----------------------------- | ------------------------------------------------------------------ |
-| `AI_PROVIDER`     | server | No (default `none`)           | `none` \| `gemini` \| `openai`. Selects the LLM provider.          |
+| `AI_PROVIDER`     | server | No (default `none`)           | `none` \| `groq` \| `gemini` \| `openai` \| `ollama`. Selects LLM. |
+| `GROQ_API_KEY`    | server | If `AI_PROVIDER=groq`         | Groq API key (uses `gpt-oss-20b` with failover to `gpt-oss-120b`). |
 | `GEMINI_API_KEY`  | server | If `AI_PROVIDER=gemini`       | Google Gemini key.                                                 |
 | `OPENAI_API_KEY`  | server | If `AI_PROVIDER=openai`       | OpenAI key.                                                        |
 | `SESSION_SECRET`  | server | **Yes, in production**        | Signs session cookies. Use a long random string. **See §5.**       |
+| `BETTER_AUTH_SECRET` | server | **Yes, in production**     | Cryptographic secret for Better Auth tokens.                       |
+| `BETTER_AUTH_URL` | server | In production                 | Base URL of the app (e.g., `https://your-app.vercel.app`).         |
+| `VERCEL_URL`      | server | Auto (Vercel)                 | Automatically mapped into Better Auth `trustedOrigins`.            |
+| `DATABASE_PATH`   | server | No                            | SQLite database file path (defaults to `/tmp/icp.db` on Vercel).   |
 | `PORT`            | server | No (default `3000`)           | Web server port.                                                   |
 | `LOG_LEVEL`       | server | No (default `info`)           | pino level: `error` \| `warn` \| `info` \| `debug`.                |
 
 > **Never commit `.env`.** It is gitignored. Secrets belong in your platform's secret manager
-> (AWS Secrets Manager, Vault, Render/Railway/Fly env settings), not in the repo.
+> (Vercel Project Settings, AWS Secrets Manager, Vault, Render/Railway env settings), not in the repo.
 
 ---
 
@@ -140,6 +145,27 @@ Run with a mounted volume for `data/` and the secret injected at runtime:
 ```bash
 docker run -p 3000:3000 -e SESSION_SECRET=... -v $(pwd)/data:/app/data icp-engine
 ```
+
+### Vercel (Serverless)
+
+The repository includes native Vercel configuration (`vercel.json` and `api/index.ts`):
+
+1. **Deploy CLI**:
+   ```bash
+   npx vercel          # Deploy preview
+   npx vercel --prod   # Deploy to production
+   ```
+2. **Environment Variables**:
+   In your Vercel Project Dashboard (Settings → Environment Variables), configure:
+   - `SESSION_SECRET`: A long random secret string.
+   - `BETTER_AUTH_SECRET`: A long random secret string.
+   - `AI_PROVIDER`: `groq` (or `gemini` / `openai`).
+   - `GROQ_API_KEY`: Your Groq API key.
+   - `BETTER_AUTH_URL`: Your Vercel deployment URL (e.g., `https://my-app.vercel.app`).
+
+3. **Serverless Behavior**:
+   - SQLite automatically stores data at `/tmp/icp.db`.
+   - Vercel functions scale dynamically and Better Auth automatically validates request origins against `VERCEL_URL`.
 
 ### PaaS (Render / Railway / Fly.io)
 

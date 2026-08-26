@@ -39,19 +39,33 @@ Each stage is a separate TypeScript module. Weights are configurable via a web U
 
 ---
 
-## Technical Decisions
+## First-Principles Engineering & Problem Solving
 
-### Why rule-based scoring with optional AI?
-The scoring pipeline works without any API key. AI (Gemini/OpenAI) only adds explanation text and email drafts. This means zero runtime cost for the core scoring, and the system never goes down because a model API is unavailable.
+### 1. Deconstructing the Qualification Problem
+When approaching B2B lead scoring, existing solutions typically fall into two flawed extremes:
+- **Black-box AI wrappers:** Pass an entire lead to an LLM prompt. Costly (\$0.05+/call), slow, non-deterministic, and impossible for a VP of Sales to calibrate.
+- **Brittle Regex systems:** Fragile keyword matchers that shatter when encountering slight title variants or international universities.
 
-### Why TypeScript strict mode + Zod?
-Every domain type is inferred from a Zod schema — there are no hand-written interfaces that can drift out of sync. ESLint enforces `no-any` globally. TypeScript catches bugs at compile time so they don't reach production.
+**First-Principles Synthesis:**
+1. **Mathematical Determinism for Scoring:** Weighted arithmetic ($w_1 \cdot S_1 + w_2 \cdot S_2 + \dots$) ensures 100% auditable, reproducible sub-scores.
+2. **Semantic Intelligence for Classification:** LLMs are reserved strictly for high-entropy tasks — classifying unknown companies into tiers and crafting natural, high-converting outreach emails.
+3. **Data Quality as an Upfront Gate:** Corrupted/incomplete records are rejected at step 0 ($0$ tokens spent), preventing bad data from generating confident hallucinations.
 
-### Why no database?
-For a single-server portfolio app, SQLite on a persistent disk is simpler, cheaper, and more transparent than a managed database. Zero infrastructure cost. The file layout (`data/sessions/{userId}/`) is easy to inspect and debug.
+---
 
-### Why Better Auth instead of custom auth?
-We migrated to Better Auth (https://better-auth.com) to demonstrate integration with an enterprise-grade TypeScript authentication framework backed by Drizzle ORM and SQLite. It provides complete identity management (email/password, OAuth, verification, password reset), while retaining express-session strictly for CSRF synchronizer tokens.
+## Technical Decisions & Practical Problem Solving
+
+### Dual-Model Auto-Failover + Zero-Cost Fallback
+We integrated Groq with auto-failover: requests begin with the ultra-fast `openai/gpt-oss-20b` (1,000 T/s). If rate-limited (HTTP 429) or degraded, the client immediately falls back to `openai/gpt-oss-120b` (500 T/s), with a final safety net to rule-based classification if all APIs are unreachable. Zero crashes, zero vendor lock-in.
+
+### TypeScript Strict Mode + Zod Single Source of Truth
+Every domain type is inferred directly from Zod schemas (`z.infer<typeof schema>`). ESLint enforces `no-explicit-any` globally. Types and validation schemas can never drift out of sync.
+
+### Multi-Tenant Storage Silos & Path Guard Security
+User sessions are isolated on disk (`data/sessions/{userId}/`). Every file interaction passes through `resolveWithin` path containment guards to mathematically eliminate directory traversal attacks.
+
+### Better Auth & Serverless SQLite
+We deployed Better Auth backed by Drizzle ORM and SQLite. On local machines, SQLite runs in high-performance WAL mode; in serverless cloud runtimes (Vercel), it dynamically switches to memory-mode at `/tmp/icp.db` with dynamic trusted origin resolution.
 
 ---
 
@@ -95,7 +109,7 @@ We migrated to Better Auth (https://better-auth.com) to demonstrate integration 
 
 ## Links
 
-- [GitHub Repository](https://github.com/YOUR_HANDLE/lead-scoring-engine)
+- [GitHub Repository](https://github.com/Vikrant038/lead-scoring-engine)
 - [Live Demo](https://YOUR_APP.onrender.com) — login with `demo@example.com / password`
 - [Architecture Decision Records](./architecture/)
 - [Architecture Overview](./ARCHITECTURE.md)

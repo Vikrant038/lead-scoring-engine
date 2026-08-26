@@ -4,6 +4,11 @@
  */
 import type { Logger } from '../lib/logger/logger';
 import { GeminiProvider } from './gemini.provider';
+import {
+  GroqProvider,
+  GROQ_DEFAULT_PRIMARY_MODEL,
+  GROQ_DEFAULT_FALLBACK_MODEL,
+} from './groq.provider';
 import type { LLMClient } from './llm-client.interface';
 import { NullProvider } from './null.provider';
 import { OpenAIProvider } from './openai.provider';
@@ -13,12 +18,16 @@ import { OllamaProvider } from './ollama.provider';
 const DEFAULT_MODELS = {
   gemini: 'gemini-1.5-flash',
   openai: 'gpt-4o-mini',
+  groq: GROQ_DEFAULT_PRIMARY_MODEL,
 } as const;
 
 export interface LlmEnv {
   AI_PROVIDER?: string;
   GEMINI_API_KEY?: string;
   OPENAI_API_KEY?: string;
+  GROQ_API_KEY?: string;
+  GROQ_MODEL?: string;
+  GROQ_FALLBACK_MODEL?: string;
   YOUCOM_API_KEY?: string;
   OLLAMA_HOST?: string;
   OLLAMA_MODEL?: string;
@@ -30,6 +39,13 @@ export function createLlmClient(env: LlmEnv, timeoutMs: number, logger: Logger):
   const ollamaModel = env.OLLAMA_MODEL ?? 'gemma2:2b';
 
   // 1. Explicitly configured provider (if key is present, or for ollama which has no key)
+  if (provider === 'groq' && env.GROQ_API_KEY) {
+    const primaryModel = env.GROQ_MODEL ?? GROQ_DEFAULT_PRIMARY_MODEL;
+    const fallbackModel = env.GROQ_FALLBACK_MODEL ?? GROQ_DEFAULT_FALLBACK_MODEL;
+    logger.info({ primaryModel, fallbackModel }, 'using Groq LLM provider with fallback');
+    return new GroqProvider(env.GROQ_API_KEY, primaryModel, fallbackModel, timeoutMs, logger);
+  }
+
   if (provider === 'ollama') {
     logger.info({ host: ollamaHost, model: ollamaModel }, 'using local Ollama LLM provider');
     return new OllamaProvider(ollamaHost, ollamaModel, timeoutMs, logger);
@@ -52,6 +68,16 @@ export function createLlmClient(env: LlmEnv, timeoutMs: number, logger: Logger):
 
   // 2. Fallback / Auto-detection: If the requested provider is 'none' or missing its key,
   // but we have other keys configured, auto-detect and use the available provider.
+  if (env.GROQ_API_KEY) {
+    const primaryModel = env.GROQ_MODEL ?? GROQ_DEFAULT_PRIMARY_MODEL;
+    const fallbackModel = env.GROQ_FALLBACK_MODEL ?? GROQ_DEFAULT_FALLBACK_MODEL;
+    logger.info(
+      { primaryModel, fallbackModel },
+      'falling back to Groq LLM provider (auto-detected key)',
+    );
+    return new GroqProvider(env.GROQ_API_KEY, primaryModel, fallbackModel, timeoutMs, logger);
+  }
+
   if (env.YOUCOM_API_KEY) {
     logger.info('falling back to You.com Research LLM provider (auto-detected key)');
     return new YoucomProvider(env.YOUCOM_API_KEY, timeoutMs, logger);

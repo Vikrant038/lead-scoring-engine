@@ -94,4 +94,8 @@ describe('PersonaRepository (integration)', () => {
     repo.delete('b'); // .trash already exists on the second delete
     expect(fs.existsSync(path.join(dir, '.trash', 'b.json'))).toBe(true);
   });
+
+  it('should throw ValidationError when attempting to delete default-icp', () => {
+    expect(() => repo.delete('default-icp')).toThrow(ValidationError);
+  });
 });
