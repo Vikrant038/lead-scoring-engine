@@ -8,6 +8,10 @@
 [![Auth & Database](https://img.shields.io/badge/Auth-Better%20Auth%20%2B%20SQLite-4F46E5?style=for-the-badge&logo=sqlite&logoColor=white)](https://better-auth.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](./LICENSE)
 
+<p align="center">
+  <img src="docs/images/app-main.png" alt="Lead Scoring Engine (ICP Profiler) Dashboard" width="100%" />
+</p>
+
 Sales teams drown in lead lists. A spreadsheet of 500 prospects is not a pipeline — it is 500
 unanswered questions: *Who is actually worth a call today? Who looks impressive but isn't a fit?
 Why is this person a 7 and that one a 3?* Answering those questions by hand is slow, inconsistent,

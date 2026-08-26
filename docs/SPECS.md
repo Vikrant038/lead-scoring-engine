@@ -7,6 +7,10 @@
 [![Auth](https://img.shields.io/badge/Auth-Better%20Auth%20%2B%20SQLite-4F46E5?style=flat-square)](https://better-auth.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](../LICENSE)
 
+<p align="center">
+  <img src="images/app-main.png" alt="Lead Scoring Engine (ICP Profiler) Dashboard" width="100%" />
+</p>
+
 > **Commercial-Grade Multi-User Lead Qualification & AI Outreach Generation Engine**  
 > Built with TypeScript (Strict), Express, Better Auth (SQLite), Drizzle ORM, Zod, and Gemini/OpenAI AI Strategy Pattern.
 
