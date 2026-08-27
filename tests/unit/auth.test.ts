@@ -47,6 +47,7 @@ import {
   verifyEmailPageController,
   verifyEmailPostController,
   resendVerificationPostController,
+  socialAuthRedirectController,
 } from '../../src/web/controllers/auth.controller';
 import { requireAuth } from '../../src/web/middleware/auth.middleware';
 import { db } from '../../src/db/connection';
@@ -775,6 +776,80 @@ describe('verify-email controllers', () => {
       await resendVerificationPostController(req, res, jest.fn());
       expect(state.redirected).toContain('error=Failed+to+resend+code');
       spy.mockRestore();
+    });
+  });
+
+  describe('socialAuthRedirectController', () => {
+    const origEnv = { ...process.env };
+
+    afterEach(() => {
+      process.env = { ...origEnv };
+    });
+
+    it('redirects with error if provider credentials not configured', async () => {
+      delete process.env.GITHUB_CLIENT_ID;
+      delete process.env.GITHUB_CLIENT_SECRET;
+      delete process.env.GOOGLE_CLIENT_ID;
+      delete process.env.GOOGLE_CLIENT_SECRET;
+
+      const req = makeReq({});
+      const { res: resGh, state: stateGh } = makeRes();
+      await socialAuthRedirectController('github')(req, resGh, jest.fn());
+      expect(decodeURIComponent(stateGh.redirected ?? '')).toContain(
+        'error=GitHub authentication is not configured',
+      );
+
+      const { res: resGg, state: stateGg } = makeRes();
+      await socialAuthRedirectController('google')(req, resGg, jest.fn());
+      expect(decodeURIComponent(stateGg.redirected ?? '')).toContain(
+        'error=Google authentication is not configured',
+      );
+    });
+
+    it('redirects to provider URL on successful Better Auth response', async () => {
+      process.env.GITHUB_CLIENT_ID = 'gh-id';
+      process.env.GITHUB_CLIENT_SECRET = 'gh-sec';
+
+      global.fetch = jest.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ url: 'https://github.com/login/oauth/authorize?client_id=123' }),
+      } as Response);
+
+      const req = makeReq({});
+      const { res, state } = makeRes();
+      await socialAuthRedirectController('github')(req, res, jest.fn());
+      expect(state.redirected).toBe('https://github.com/login/oauth/authorize?client_id=123');
+    });
+
+    it('redirects with error if Better Auth returns non-ok or missing url', async () => {
+      process.env.GITHUB_CLIENT_ID = 'gh-id';
+      process.env.GITHUB_CLIENT_SECRET = 'gh-sec';
+
+      global.fetch = jest.fn().mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ error: 'bad' }),
+      } as Response);
+
+      const req = makeReq({});
+      const { res, state } = makeRes();
+      await socialAuthRedirectController('github')(req, res, jest.fn());
+      expect(decodeURIComponent(state.redirected ?? '')).toContain(
+        'error=Failed to initialize github login',
+      );
+    });
+
+    it('redirects with error if fetch throws an exception', async () => {
+      process.env.GOOGLE_CLIENT_ID = 'gg-id';
+      process.env.GOOGLE_CLIENT_SECRET = 'gg-sec';
+
+      global.fetch = jest.fn().mockRejectedValueOnce(new Error('Network error'));
+
+      const req = makeReq({});
+      const { res, state } = makeRes();
+      await socialAuthRedirectController('google')(req, res, jest.fn());
+      expect(decodeURIComponent(state.redirected ?? '')).toContain(
+        'error=Failed to connect to google authentication',
+      );
     });
   });
 });

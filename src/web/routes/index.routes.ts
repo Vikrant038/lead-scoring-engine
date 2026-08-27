@@ -44,6 +44,7 @@ import {
   verifyEmailPageController,
   verifyEmailPostController,
   resendVerificationPostController,
+  socialAuthRedirectController,
 } from '../controllers/auth.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 import { UploadService } from '../services/upload.service';
@@ -58,6 +59,8 @@ export function createRouter(ctx: WebContext): Router {
   router.post('/auth/login', loginPostController);
   router.get('/auth/register', registerPageController);
   router.post('/auth/register', registerPostController);
+  router.get('/auth/github', socialAuthRedirectController('github'));
+  router.get('/auth/google', socialAuthRedirectController('google'));
   router.get('/auth/logout', logoutController);
   router.get('/auth/verify-email', verifyEmailPageController);
   router.post('/auth/verify-email', verifyEmailPostController);

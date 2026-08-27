@@ -402,3 +402,51 @@ export const resendVerificationPostController: RequestHandler = async (req, res)
     );
   }
 };
+
+/**
+ * GET /auth/:provider (direct navigation helper for social login)
+ */
+export const socialAuthRedirectController =
+  (provider: 'github' | 'google'): RequestHandler =>
+  async (_req, res) => {
+    const isConfigured =
+      provider === 'github'
+        ? Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET)
+        : Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+
+    if (!isConfigured) {
+      const providerName = provider === 'github' ? 'GitHub' : 'Google';
+      return res.redirect(
+        `/auth/login?error=${encodeURIComponent(`${providerName} authentication is not configured. Please set credentials in .env.`)}`,
+      );
+    }
+
+    try {
+      const response = await fetch(`${authBaseUrl()}/api/auth/sign-in/social`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: authBaseUrl(),
+        },
+        body: JSON.stringify({
+          provider,
+          callbackURL: '/',
+        }),
+      });
+
+      if (response.ok) {
+        const data = (await response.json()) as { url?: string };
+        if (data.url) {
+          return res.redirect(data.url);
+        }
+      }
+
+      return res.redirect(
+        `/auth/login?error=${encodeURIComponent(`Failed to initialize ${provider} login`)}`,
+      );
+    } catch {
+      return res.redirect(
+        `/auth/login?error=${encodeURIComponent(`Failed to connect to ${provider} authentication`)}`,
+      );
+    }
+  };
