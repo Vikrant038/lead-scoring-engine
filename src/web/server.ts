@@ -62,6 +62,7 @@ export function buildContext(config: AppConfig, logger: Logger, llm: LLMClient):
 
 export function createApp(ctx: WebContext, sessionSecret: string): Express {
   const app = express();
+  app.set('trust proxy', 1);
   app.set('view engine', 'ejs');
   app.set('views', VIEWS_DIR);
 

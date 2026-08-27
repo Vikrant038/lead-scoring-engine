@@ -8,7 +8,7 @@
   },
   "main": "dist/src/cli/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run build:css && tsc -p tsconfig.json",
     "build:css": "tailwindcss -i ./src/web/views/styles.css -o ./public/css/app.css --minify",
     "start": "node dist/src/cli/index.js",
     "dev": "tsx src/cli/index.ts",

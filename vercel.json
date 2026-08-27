@@ -6,6 +6,14 @@
   },
   "rewrites": [
     {
+      "source": "/css/(.*)",
+      "destination": "/public/css/$1"
+    },
+    {
+      "source": "/js/(.*)",
+      "destination": "/public/js/$1"
+    },
+    {
       "source": "/public/(.*)",
       "destination": "/public/$1"
     },

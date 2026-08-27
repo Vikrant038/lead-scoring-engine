@@ -23,6 +23,7 @@ export const globalLimiter: RequestHandler = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
   message: envelope('Too many requests, please try again later.', 'RATE_LIMITED'),
 });
 
@@ -31,6 +32,7 @@ export const authLimiter: RequestHandler = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
   message: envelope('Too many authentication attempts, please try again later.', 'RATE_LIMITED'),
 });
 
@@ -39,6 +41,7 @@ export const uploadLimiter: RequestHandler = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
   message: envelope('Too many upload requests, please try again later.', 'RATE_LIMITED'),
 });
 
@@ -47,6 +50,7 @@ export const emailRegenerateLimiter: RequestHandler = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
   message: envelope(
     'Too many email regeneration requests, please try again later.',
     'RATE_LIMITED',
@@ -63,6 +67,7 @@ export function createRateLimiter(options: {
     max: options.max ?? 5,
     standardHeaders: true,
     legacyHeaders: false,
+    validate: false,
     message: envelope(
       options.message ?? 'Too many requests, please try again later.',
       'RATE_LIMITED',
