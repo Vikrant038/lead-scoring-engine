@@ -1,6 +1,6 @@
 import { MulterError } from 'multer';
 import type { Request, Response } from 'express';
-import { ErrorCode } from '../../src/lib/errors/codes';
+import { ErrorCode } from '../../src/lib/errors/domain-errors';
 import { ForbiddenError, NotFoundError } from '../../src/lib/errors/domain-errors';
 import { createErrorHandler } from '../../src/web/middleware/error-handler.middleware';
 import {
