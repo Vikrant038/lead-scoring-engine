@@ -21,6 +21,14 @@ import { sendEmail } from '../../lib/email/fake-mailer';
 
 // ── View controllers ────────────────────────────────────────────────────────
 
+/** Which social providers have credentials configured (drives login/register buttons). */
+function configuredOAuthProviders(): { google: boolean; github: boolean } {
+  return {
+    google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    github: Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
+  };
+}
+
 // GET /auth/login
 export const loginPageController: RequestHandler = (req, res) => {
   if (req.user) return res.redirect('/history');
@@ -29,10 +37,7 @@ export const loginPageController: RequestHandler = (req, res) => {
     csrfToken: res.locals.csrfToken,
     error: req.query.error ?? null,
     cspNonce: res.locals.cspNonce ?? '',
-    oauthProviders: {
-      google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
-      github: Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
-    },
+    oauthProviders: configuredOAuthProviders(),
   });
 };
 
@@ -44,10 +49,7 @@ export const registerPageController: RequestHandler = (req, res) => {
     csrfToken: res.locals.csrfToken,
     error: req.query.error ?? null,
     cspNonce: res.locals.cspNonce ?? '',
-    oauthProviders: {
-      google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
-      github: Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
-    },
+    oauthProviders: configuredOAuthProviders(),
   });
 };
 
@@ -79,6 +81,44 @@ function forwardCookies(authRes: Response, res: Parameters<RequestHandler>[1]): 
   if (cookies) {
     res.setHeader('Set-Cookie', cookies);
   }
+}
+
+/**
+ * Issue a fresh 6-digit CSPRNG verification code and email it to the user.
+ * Shared by login (unverified user), register, and resend.
+ */
+async function issueVerificationCode(email: string): Promise<void> {
+  const code = randomInt(100000, 1000000).toString();
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+  await db.delete(verification).where(eq(verification.identifier, email));
+  await db.insert(verification).values({
+    id: randomUUID(),
+    identifier: email,
+    value: code,
+    expiresAt,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  await sendEmail({
+    to: email,
+    subject: 'Verify your email — ICP Profiler',
+    body: `Your 6-digit verification code is: ${code}. It will expire in 15 minutes.`,
+  });
+}
+
+/**
+ * Redirect to the verify-email page with query params, resetting the state machine to
+ * 'initiated' so the redirect target is not treated as a page refresh (which cancels it).
+ */
+function redirectVerify(
+  req: Parameters<RequestHandler>[0],
+  res: Parameters<RequestHandler>[1],
+  params: Record<string, string>,
+): void {
+  req.session.verificationStep = 'initiated';
+  res.redirect(`/auth/verify-email?${new URLSearchParams(params).toString()}`);
 }
 
 // ── Form-submit handlers ────────────────────────────────────────────────────
@@ -118,30 +158,9 @@ export const loginPostController: RequestHandler = async (req, res) => {
     const [userRecord] = await db.select().from(user).where(eq(user.email, email)).limit(1);
 
     if (userRecord && !userRecord.emailVerified) {
-      // Generate and send code using CSPRNG
-      const code = randomInt(100000, 1000000).toString();
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
-      const id = randomUUID();
-
-      await db.delete(verification).where(eq(verification.identifier, email));
-      await db.insert(verification).values({
-        id,
-        identifier: email,
-        value: code,
-        expiresAt,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-
-      await sendEmail({
-        to: email,
-        subject: 'Verify your email — ICP Profiler',
-        body: `Your 6-digit verification code is: ${code}. It will expire in 15 minutes.`,
-      });
-
-      req.session.verificationStep = 'initiated';
-
-      return res.redirect(`/auth/verify-email?email=${encodeURIComponent(email)}`);
+      await issueVerificationCode(email);
+      redirectVerify(req, res, { email });
+      return;
     }
 
     const returnTo = typeof req.session?.returnTo === 'string' ? req.session.returnTo : '/';
@@ -181,31 +200,8 @@ export const registerPostController: RequestHandler = async (req, res) => {
       name: name ?? email,
     };
 
-    // Generate and send 6-digit verification code using CSPRNG
-    const code = randomInt(100000, 1000000).toString();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
-    const id = randomUUID();
-
-    await db.delete(verification).where(eq(verification.identifier, email));
-    await db.insert(verification).values({
-      id,
-      identifier: email,
-      value: code,
-      expiresAt,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    await sendEmail({
-      to: email,
-      subject: 'Verify your email — ICP Profiler',
-      body: `Your 6-digit verification code is: ${code}. It will expire in 15 minutes.`,
-    });
-
-    // Initiate verification state machine
-    req.session.verificationStep = 'initiated';
-
-    return res.redirect(`/auth/verify-email?email=${encodeURIComponent(email)}`);
+    await issueVerificationCode(email);
+    redirectVerify(req, res, { email });
   } catch {
     return res.redirect('/auth/register?error=An+unexpected+error+occurred');
   }
@@ -269,10 +265,8 @@ export const verifyEmailPostController: RequestHandler = async (req, res) => {
   const { email, code } = req.body as { email?: string; code?: string };
 
   if (!email || !code) {
-    req.session.verificationStep = 'initiated'; // prevent treated as refresh on redirect
-    return res.redirect(
-      `/auth/verify-email?email=${encodeURIComponent(email ?? '')}&error=Code+is+required`,
-    );
+    redirectVerify(req, res, { email: email ?? '', error: 'Code is required' });
+    return;
   }
 
   try {
@@ -283,17 +277,13 @@ export const verifyEmailPostController: RequestHandler = async (req, res) => {
       .limit(1);
 
     if (!tokenRecord) {
-      req.session.verificationStep = 'initiated'; // prevent treated as refresh on redirect
-      return res.redirect(
-        `/auth/verify-email?email=${encodeURIComponent(email)}&error=Invalid+verification+code`,
-      );
+      redirectVerify(req, res, { email, error: 'Invalid verification code' });
+      return;
     }
 
     if (new Date(tokenRecord.expiresAt).getTime() < Date.now()) {
-      req.session.verificationStep = 'initiated'; // prevent treated as refresh on redirect
-      return res.redirect(
-        `/auth/verify-email?email=${encodeURIComponent(email)}&error=Verification+code+has+expired`,
-      );
+      redirectVerify(req, res, { email, error: 'Verification code has expired' });
+      return;
     }
 
     // If it's a new registration, create the account in the database now
@@ -315,10 +305,8 @@ export const verifyEmailPostController: RequestHandler = async (req, res) => {
         } catch {
           // ignore
         }
-        req.session.verificationStep = 'initiated';
-        return res.redirect(
-          `/auth/verify-email?email=${encodeURIComponent(email)}&error=${encodeURIComponent(message)}`,
-        );
+        redirectVerify(req, res, { email, error: message });
+        return;
       }
 
       // Mark the user as verified in the database
@@ -332,10 +320,8 @@ export const verifyEmailPostController: RequestHandler = async (req, res) => {
       });
 
       if (!signinRes.ok) {
-        req.session.verificationStep = 'initiated';
-        return res.redirect(
-          `/auth/verify-email?email=${encodeURIComponent(email)}&error=Failed+to+log+in+after+verification`,
-        );
+        redirectVerify(req, res, { email, error: 'Failed to log in after verification' });
+        return;
       }
 
       forwardCookies(signinRes, res);
@@ -353,10 +339,7 @@ export const verifyEmailPostController: RequestHandler = async (req, res) => {
 
     return res.redirect('/history');
   } catch {
-    req.session.verificationStep = 'initiated'; // prevent treated as refresh on redirect
-    return res.redirect(
-      `/auth/verify-email?email=${encodeURIComponent(email)}&error=An+unexpected+error+occurred`,
-    );
+    redirectVerify(req, res, { email: email ?? '', error: 'An unexpected error occurred' });
   }
 };
 
@@ -369,37 +352,10 @@ export const resendVerificationPostController: RequestHandler = async (req, res)
   }
 
   try {
-    const code = randomInt(100000, 1000000).toString();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
-    const id = randomUUID();
-
-    await db.delete(verification).where(eq(verification.identifier, email));
-
-    await db.insert(verification).values({
-      id,
-      identifier: email,
-      value: code,
-      expiresAt,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    await sendEmail({
-      to: email,
-      subject: 'Verify your email — ICP Profiler',
-      body: `Your new 6-digit verification code is: ${code}. It will expire in 15 minutes.`,
-    });
-
-    req.session.verificationStep = 'initiated'; // prevent treated as refresh on redirect
-
-    return res.redirect(
-      `/auth/verify-email?email=${encodeURIComponent(email)}&success=A+new+verification+code+has+been+sent`,
-    );
+    await issueVerificationCode(email);
+    redirectVerify(req, res, { email, success: 'A new verification code has been sent' });
   } catch {
-    req.session.verificationStep = 'initiated'; // prevent treated as refresh on redirect
-    return res.redirect(
-      `/auth/verify-email?email=${encodeURIComponent(email)}&error=Failed+to+resend+code`,
-    );
+    redirectVerify(req, res, { email, error: 'Failed to resend code' });
   }
 };
 
@@ -409,10 +365,7 @@ export const resendVerificationPostController: RequestHandler = async (req, res)
 export const socialAuthRedirectController =
   (provider: 'github' | 'google'): RequestHandler =>
   async (_req, res) => {
-    const isConfigured =
-      provider === 'github'
-        ? Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET)
-        : Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+    const isConfigured = configuredOAuthProviders()[provider];
 
     if (!isConfigured) {
       const providerName = provider === 'github' ? 'GitHub' : 'Google';

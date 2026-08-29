@@ -689,7 +689,8 @@ describe('verify-email controllers', () => {
       const { res, state } = makeRes();
       await verifyEmailPostController(req, res, jest.fn());
 
-      expect(state.redirected).toContain('error=Password%20too%20weak');
+      // URLSearchParams encodes spaces as '+' (same form the hand-written redirects used).
+      expect(state.redirected).toContain('error=Password+too+weak');
     });
 
     it('redirects with error if Better Auth signin fails', async () => {
