@@ -83,21 +83,17 @@ export class QueueService {
     if (this.items.length <= this.maxRetained) {
       return;
     }
-    // Evict oldest completed or errored jobs
-    const finishedIndices: number[] = [];
-    this.items.forEach((job, idx) => {
-      if (job.status === 'completed' || job.status === 'error') {
-        finishedIndices.push(idx);
-      }
-    });
-    while (this.items.length > this.maxRetained && finishedIndices.length > 0) {
-      const idxToRemove = finishedIndices.shift();
-      if (idxToRemove !== undefined) {
-        this.items.splice(idxToRemove, 1);
-        // Adjust remaining indices
-        for (let i = 0; i < finishedIndices.length; i++) {
-          finishedIndices[i] -= 1;
-        }
+    // Evict oldest completed or errored jobs (insertion order == chronological order)
+    const finished = this.items.filter(
+      (job) => job.status === 'completed' || job.status === 'error',
+    );
+    const toRemove = new Set(finished.slice(0, this.items.length - this.maxRetained));
+    if (toRemove.size === 0) {
+      return;
+    }
+    for (let i = this.items.length - 1; i >= 0; i -= 1) {
+      if (toRemove.has(this.items[i])) {
+        this.items.splice(i, 1);
       }
     }
   }
