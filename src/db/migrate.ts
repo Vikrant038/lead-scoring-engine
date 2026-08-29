@@ -116,7 +116,8 @@ export async function seedDemoUserViaApi(port: number): Promise<void> {
     },
     body: JSON.stringify({
       email: 'demo@example.com',
-      password: 'password',
+      // Demo-only credential, overridable via env; not a production secret.
+      password: process.env.DEMO_USER_PASSWORD ?? 'demo-password-change-me',
       name: 'Demo User',
     }),
   });

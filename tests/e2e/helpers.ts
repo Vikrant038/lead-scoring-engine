@@ -21,7 +21,7 @@ export const SAMPLE_PERSONA = {
 export async function loginDemoUser(page: Page): Promise<void> {
   await page.goto('/auth/login');
   await page.fill('#email', 'demo@example.com');
-  await page.fill('#password', 'password');
+  await page.fill('#password', 'demo-password-change-me');
   await page.click('#sign-in-btn');
   await page.waitForURL((url) => url.pathname === '/');
 }
