@@ -460,12 +460,14 @@ describe('web controllers (unit)', () => {
       expect(next).toHaveBeenCalledWith(expect.any(Error));
 
       next.mockReset();
-      jobController(ctx)(req({ user: undefined, params: { jobId: 'j1' } }), mockRes(), next);
-      expect(next).toHaveBeenCalledWith(expect.any(Error));
+      // jobController/queueController are fully synchronous; Express converts their sync
+      // throw into next(err).
+      expect(() =>
+        jobController(ctx)(req({ user: undefined, params: { jobId: 'j1' } }), mockRes(), next),
+      ).toThrow();
 
       next.mockReset();
-      queueController(ctx)(req({ user: undefined }), mockRes(), next);
-      expect(next).toHaveBeenCalledWith(expect.any(Error));
+      expect(() => queueController(ctx)(req({ user: undefined }), mockRes(), next)).toThrow();
     });
 
     it('protects default-icp from save and upload in persona controller', () => {

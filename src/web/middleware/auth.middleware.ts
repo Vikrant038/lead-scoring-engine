@@ -5,6 +5,19 @@
 import type { Request, Response, NextFunction } from 'express';
 import { auth } from '../../lib/auth/auth';
 import { fromNodeHeaders } from 'better-auth/node';
+import { UnauthorizedError } from '../../lib/errors/domain-errors';
+
+/**
+ * Assert an authenticated user id or throw UnauthorizedError (401).
+ * Controllers use this instead of repeating the null check.
+ */
+export function requireUserId(req: Request): string {
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new UnauthorizedError();
+  }
+  return userId;
+}
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
