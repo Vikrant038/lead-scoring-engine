@@ -44,7 +44,7 @@ export abstract class BaseLlmProvider implements LLMClient {
 
   constructor(
     protected readonly apiKey: string,
-    protected readonly model: string,
+    protected model: string,
     protected readonly timeoutMs: number,
     protected readonly logger: Logger,
   ) {}
