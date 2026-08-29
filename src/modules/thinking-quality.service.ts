@@ -2,7 +2,7 @@
  * Thinking Quality analysis (F-05). Scores visionary/leadership signal from skills and job titles.
  * Pure (no LLM): +10 per distinct visionary keyword (cap 100), +10 leadership bonus (cap 100).
  */
-import type { AppConfig } from '../config/config.schema';
+import type { AppConfig } from '../config/config';
 import type { ThinkingSignal } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 

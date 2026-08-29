@@ -3,7 +3,7 @@
  * input profile sequentially, writing per-lead results, a batch summary, and a CSV export.
  * Shared by the CLI (Unit 8) and the demo (Unit 12).
  */
-import type { AppConfig } from '../config/config.schema';
+import type { AppConfig } from '../config/config';
 import type { BatchSummary } from '../domain/types';
 import type { Bucket, ProfileResult } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';

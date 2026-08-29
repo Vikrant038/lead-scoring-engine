@@ -5,7 +5,7 @@
  */
 import path from 'node:path';
 import { runBatch, type RunBatchResult } from '../batch/run-batch';
-import type { AppConfig } from '../config/config.schema';
+import type { AppConfig } from '../config/config';
 import type { EmailSettings } from '../domain/types';
 import type { Persona } from '../domain/types';
 import type { Profile } from '../domain/types';

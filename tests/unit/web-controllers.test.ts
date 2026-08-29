@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { Request, Response } from 'express';
 import { defaultConfig } from '../../src/config/config';
-import { ConfigService } from '../../src/config/config.service';
+import { ConfigService } from '../../src/config/config';
 import { NullProvider } from '../../src/llm/null.provider';
 import { OutreachEmailService } from '../../src/modules/outreach-email.service';
 import { createProfiler } from '../../src/batch/run-batch';

@@ -2,7 +2,7 @@ import type { Profile } from '../domain/types';
 import type { OutreachEmail } from '../domain/types';
 import type { Tier } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
-import { ConfigService } from '../config/config.service';
+import { ConfigService } from '../config/config';
 import { GeminiProvider } from './gemini.provider';
 import {
   GroqProvider,

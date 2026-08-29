@@ -4,7 +4,7 @@ import path from 'node:path';
 import request from 'supertest';
 import type { Express } from 'express';
 import { defaultConfig } from '../../src/config/config';
-import { ConfigService } from '../../src/config/config.service';
+import { ConfigService } from '../../src/config/config';
 import { NullProvider } from '../../src/llm/null.provider';
 import { OutreachEmailService } from '../../src/modules/outreach-email.service';
 import { PersonaRepository } from '../../src/repositories/persona.repository';

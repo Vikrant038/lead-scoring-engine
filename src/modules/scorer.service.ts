@@ -2,7 +2,7 @@
  * Scorer (F-06). Combines component sub-scores with configurable weights, applies the recency
  * bonus, rounds to one decimal, and assigns bucket/priority/conversion.
  */
-import type { AppConfig } from '../config/config.schema';
+import type { AppConfig } from '../config/config';
 import type { Profile } from '../domain/types';
 import type { Bucket } from '../domain/types';
 import type { ComponentScores } from '../domain/types';

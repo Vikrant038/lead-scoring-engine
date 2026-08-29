@@ -12,7 +12,7 @@ import {
 } from '../../src/llm/groq.provider';
 import { createLlmClient } from '../../src/llm/llm-client.factory';
 import { DynamicLlmClient } from '../../src/llm/dynamic-llm.client';
-import { ConfigService } from '../../src/config/config.service';
+import { ConfigService } from '../../src/config/config';
 import { defaultConfig } from '../../src/config/config';
 import { NullProvider } from '../../src/llm/null.provider';
 

@@ -4,7 +4,7 @@
  */
 import { DynamicLlmClient } from '../../src/llm/dynamic-llm.client';
 import { NullProvider } from '../../src/llm/null.provider';
-import { ConfigService } from '../../src/config/config.service';
+import { ConfigService } from '../../src/config/config';
 import { defaultConfig } from '../../src/config/config';
 import { silentLogger } from '../helpers/test-deps';
 import type { LLMClient } from '../../src/llm/llm-client.interface';

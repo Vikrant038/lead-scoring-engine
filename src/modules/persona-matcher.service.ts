@@ -4,7 +4,7 @@
  * builds a gap analysis. Pure (no LLM). `match()` is the entry point; sub-scorers are exposed
  * for focused testing.
  */
-import type { AppConfig } from '../config/config.schema';
+import type { AppConfig } from '../config/config';
 import type { Persona, PersonaFitBucket, PersonaFitResult } from '../domain/types';
 import type { CompanyTier, Tier } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
