@@ -6,7 +6,7 @@ import type { RequestHandler } from 'express';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../lib/errors/domain-errors';
 import { emailSettingsSchema } from '../../schemas/email-settings.schema';
 import { FileHandlerRepository } from '../../repositories/file-handler.repository';
-import type { EmailSettings } from '../../domain/result.types';
+import type { EmailSettings } from '../../domain/types';
 import type { WebContext } from '../context';
 
 const FALLBACK_SETTINGS: EmailSettings = {

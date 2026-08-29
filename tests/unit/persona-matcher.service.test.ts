@@ -1,6 +1,6 @@
 import { defaultConfig } from '../../src/config/config';
-import type { Persona } from '../../src/domain/persona.types';
-import type { CompanyTier } from '../../src/domain/scoring.types';
+import type { Persona } from '../../src/domain/types';
+import type { CompanyTier } from '../../src/domain/types';
 import {
   PersonaMatcherService,
   type PersonaMatchInput,

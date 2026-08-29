@@ -1,5 +1,5 @@
 import { defaultConfig } from '../../src/config/config';
-import type { Profile } from '../../src/domain/profile.types';
+import type { Profile } from '../../src/domain/types';
 import { DataQualityService } from '../../src/modules/data-quality.service';
 import { EducationService } from '../../src/modules/education.service';
 import { ExperienceService } from '../../src/modules/experience.service';

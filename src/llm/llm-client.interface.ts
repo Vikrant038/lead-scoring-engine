@@ -2,9 +2,9 @@
  * LLMClient contract (ASSUMPTION-3). All methods return a result envelope so callers can fall
  * back to rule-based logic on failure without exceptions crossing module boundaries (MAIN-04).
  */
-import type { Profile } from '../domain/profile.types';
-import type { OutreachEmail } from '../domain/result.types';
-import type { ComponentScores, Tier } from '../domain/scoring.types';
+import type { Profile } from '../domain/types';
+import type { OutreachEmail } from '../domain/types';
+import type { ComponentScores, Tier } from '../domain/types';
 
 export interface LlmResult<T> {
   success: boolean;

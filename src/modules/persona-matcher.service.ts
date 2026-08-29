@@ -5,8 +5,8 @@
  * for focused testing.
  */
 import type { AppConfig } from '../config/config.schema';
-import type { Persona, PersonaFitBucket, PersonaFitResult } from '../domain/persona.types';
-import type { CompanyTier, Tier } from '../domain/scoring.types';
+import type { Persona, PersonaFitBucket, PersonaFitResult } from '../domain/types';
+import type { CompanyTier, Tier } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 
 /** Default experience sub-weights (FR-12-018). */

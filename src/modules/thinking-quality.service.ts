@@ -3,7 +3,7 @@
  * Pure (no LLM): +10 per distinct visionary keyword (cap 100), +10 leadership bonus (cap 100).
  */
 import type { AppConfig } from '../config/config.schema';
-import type { ThinkingSignal } from '../domain/scoring.types';
+import type { ThinkingSignal } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 
 const KEYWORD_POINTS = 10;

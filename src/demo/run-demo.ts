@@ -6,9 +6,9 @@
 import path from 'node:path';
 import { runBatch, type RunBatchResult } from '../batch/run-batch';
 import type { AppConfig } from '../config/config.schema';
-import type { EmailSettings } from '../domain/result.types';
-import type { Persona } from '../domain/persona.types';
-import type { Profile } from '../domain/profile.types';
+import type { EmailSettings } from '../domain/types';
+import type { Persona } from '../domain/types';
+import type { Profile } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 import type { LLMClient } from '../llm/llm-client.interface';
 import { PersonaRepository } from '../repositories/persona.repository';

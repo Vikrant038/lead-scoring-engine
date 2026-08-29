@@ -4,7 +4,7 @@
  * and maps it to a sub-score.
  */
 import type { AppConfig } from '../config/config.schema';
-import type { EducationSignal, Tier } from '../domain/scoring.types';
+import type { EducationSignal, Tier } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 import type { LLMClient } from '../llm/llm-client.interface';
 import { SerperService } from '../lib/search/serper';

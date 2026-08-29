@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { defaultConfig } from '../../src/config/config';
-import type { BatchSummary } from '../../src/domain/io.types';
-import type { ProfileResult } from '../../src/domain/result.types';
+import type { BatchSummary } from '../../src/domain/types';
+import type { ProfileResult } from '../../src/domain/types';
 import { formatReport, runCli } from '../../src/cli/index';
 import { silentLogger } from '../helpers/test-deps';
 

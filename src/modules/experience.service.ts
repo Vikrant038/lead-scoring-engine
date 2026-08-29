@@ -4,7 +4,7 @@
  * and scores from tier-1/2 counts.
  */
 import type { AppConfig } from '../config/config.schema';
-import type { CompanyTier, ExperienceSignal, Tier } from '../domain/scoring.types';
+import type { CompanyTier, ExperienceSignal, Tier } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 import type { LLMClient } from '../llm/llm-client.interface';
 import { SerperService } from '../lib/search/serper';

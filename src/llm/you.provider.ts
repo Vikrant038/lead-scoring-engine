@@ -4,9 +4,9 @@
  * 'deep' effort for grounded AI explanations and outreach email generation.
  * Enforces structured JSON outputs via output_schema.
  */
-import type { Profile } from '../domain/profile.types';
-import type { OutreachEmail } from '../domain/result.types';
-import type { Tier } from '../domain/scoring.types';
+import type { Profile } from '../domain/types';
+import type { OutreachEmail } from '../domain/types';
+import type { Tier } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 import { profileSchema } from '../schemas/profile.schema';
 import type {

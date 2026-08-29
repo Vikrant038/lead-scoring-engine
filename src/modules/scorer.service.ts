@@ -3,9 +3,9 @@
  * bonus, rounds to one decimal, and assigns bucket/priority/conversion.
  */
 import type { AppConfig } from '../config/config.schema';
-import type { Profile } from '../domain/profile.types';
-import type { Bucket } from '../domain/result.types';
-import type { ComponentScores } from '../domain/scoring.types';
+import type { Profile } from '../domain/types';
+import type { Bucket } from '../domain/types';
+import type { ComponentScores } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 
 export interface SubScores {

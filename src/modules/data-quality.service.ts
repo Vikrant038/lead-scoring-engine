@@ -2,8 +2,8 @@
  * Data Quality validation (F-02). Scores profile completeness and decides whether to process.
  * Pure (no LLM): base 100, minus 30 per missing required field (name, education, jobs).
  */
-import type { Profile } from '../domain/profile.types';
-import type { DataQualitySignal } from '../domain/scoring.types';
+import type { Profile } from '../domain/types';
+import type { DataQualitySignal } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 
 const MISSING_FIELD_PENALTY = 30;

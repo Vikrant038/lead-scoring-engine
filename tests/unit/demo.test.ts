@@ -5,7 +5,7 @@ import { defaultConfig } from '../../src/config/config';
 import { NullProvider } from '../../src/llm/null.provider';
 import { PersonaRepository } from '../../src/repositories/persona.repository';
 import type { AppConfig } from '../../src/config/config.schema';
-import type { ProfileResult } from '../../src/domain/result.types';
+import type { ProfileResult } from '../../src/domain/types';
 import type { RunBatchResult } from '../../src/batch/run-batch';
 import { parseDemoArgs } from '../../src/demo/demo-args';
 import { loadFallbackProfiles, writeDemoInput } from '../../src/demo/demo-input';

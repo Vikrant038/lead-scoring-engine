@@ -4,7 +4,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import { ValidationError } from '../../lib/errors/domain-errors';
-import type { EmailSettings } from '../../domain/result.types';
+import type { EmailSettings } from '../../domain/types';
 import type { Logger } from '../../lib/logger/logger';
 
 export type JobStatus = 'queued' | 'processing' | 'completed' | 'error';

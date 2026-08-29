@@ -1,6 +1,6 @@
-import type { Profile } from '../domain/profile.types';
-import type { OutreachEmail } from '../domain/result.types';
-import type { Tier } from '../domain/scoring.types';
+import type { Profile } from '../domain/types';
+import type { OutreachEmail } from '../domain/types';
+import type { Tier } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 import { ConfigService } from '../config/config.service';
 import { GeminiProvider } from './gemini.provider';

@@ -5,8 +5,8 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import type { InputProfile, BatchSummary } from '../domain/io.types';
-import type { ProfileResult } from '../domain/result.types';
+import type { InputProfile, BatchSummary } from '../domain/types';
+import type { ProfileResult } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 import { NotFoundError } from '../lib/errors/domain-errors';
 import { resolveWithin, resultFileName } from '../lib/security/path-guard';

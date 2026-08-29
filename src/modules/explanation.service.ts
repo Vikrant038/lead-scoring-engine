@@ -3,8 +3,8 @@
  * Returns null when the LLM is unavailable (FR-13-005) and a fixed fallback string when a call
  * fails (FR-13-004).
  */
-import type { Profile } from '../domain/profile.types';
-import type { ProfileResult } from '../domain/result.types';
+import type { Profile } from '../domain/types';
+import type { ProfileResult } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 import type { ExplanationInput, LLMClient } from '../llm/llm-client.interface';
 import type { ExplanationGenerator } from './profiler.service';

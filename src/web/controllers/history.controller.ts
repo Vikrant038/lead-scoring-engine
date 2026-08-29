@@ -5,7 +5,7 @@
 import type { RequestHandler } from 'express';
 import { UnauthorizedError } from '../../lib/errors/domain-errors';
 import { FileHandlerRepository } from '../../repositories/file-handler.repository';
-import type { Bucket, ProfileResult } from '../../domain/result.types';
+import type { Bucket, ProfileResult } from '../../domain/types';
 import type { WebContext } from '../context';
 
 export function summarise(results: ProfileResult[]): {

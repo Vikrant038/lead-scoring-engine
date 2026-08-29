@@ -15,7 +15,7 @@ import {
 import { FileHandlerRepository } from '../../src/repositories/file-handler.repository';
 import { PersonaRepository } from '../../src/repositories/persona.repository';
 import { SessionStoreRepository } from '../../src/repositories/session-store.repository';
-import type { ProfileResult } from '../../src/domain/result.types';
+import type { ProfileResult } from '../../src/domain/types';
 import type { WebContext } from '../../src/web/context';
 import {
   configPageController,

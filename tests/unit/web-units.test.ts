@@ -9,7 +9,7 @@ import {
   groupIntoBatches,
 } from '../../src/web/controllers/history.controller';
 import { QueueService } from '../../src/web/services/queue.service';
-import type { ProfileResult } from '../../src/domain/result.types';
+import type { ProfileResult } from '../../src/domain/types';
 import type { WebContext } from '../../src/web/context';
 import { silentLogger } from '../helpers/test-deps';
 

@@ -7,7 +7,7 @@ import path from 'node:path';
 import { ValidationError } from '../../lib/errors/domain-errors';
 import { sanitiseId } from '../../lib/security/path-guard';
 import { uploadedProfilesSchema } from '../../schemas/upload.schema';
-import type { EmailSettings } from '../../domain/result.types';
+import type { EmailSettings } from '../../domain/types';
 import type { SessionStoreRepository } from '../../repositories/session-store.repository';
 import type { Job, QueueService } from './queue.service';
 

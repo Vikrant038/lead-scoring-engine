@@ -2,9 +2,9 @@
  * Shared LLM provider logic: prompt construction, response parsing, and a timeout-guarded POST.
  * Concrete providers (Gemini, OpenAI) implement only `request()` (the raw text completion).
  */
-import type { Profile } from '../domain/profile.types';
-import type { OutreachEmail } from '../domain/result.types';
-import type { Tier } from '../domain/scoring.types';
+import type { Profile } from '../domain/types';
+import type { OutreachEmail } from '../domain/types';
+import type { Tier } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 import { profileSchema } from '../schemas/profile.schema';
 import type {

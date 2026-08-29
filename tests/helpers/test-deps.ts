@@ -2,7 +2,7 @@
  * Shared test dependencies: a silent logger and configurable fake LLM clients.
  */
 import { Writable } from 'node:stream';
-import type { Tier } from '../../src/domain/scoring.types';
+import type { Tier } from '../../src/domain/types';
 import { createLogger } from '../../src/lib/logger/logger';
 import type { LLMClient } from '../../src/llm/llm-client.interface';
 
