@@ -20,8 +20,13 @@ test.describe('Journey 2: persona management', () => {
     // Page reloads with the new persona row.
     await expect(page.getByText('E2E Persona')).toBeVisible({ timeout: 10_000 });
 
-    // Activate it, then confirm the home dropdown offers it.
+    // Activate it, then confirm the home dropdown offers it. The radio's change handler
+    // POSTs /api/set-persona and then reloads the page; wait for both so the reload
+    // cannot abort the navigation below.
+    const activated = page.waitForResponse((r) => r.url().includes('/api/set-persona'));
     await page.locator('.set-persona').first().check();
+    await activated;
+    await page.waitForLoadState('networkidle');
     await page.goto('/');
     await expect(page.locator('#persona-select')).toContainText('E2E Persona');
   });

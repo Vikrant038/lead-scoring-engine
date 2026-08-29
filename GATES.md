@@ -25,6 +25,11 @@ Each phase P1–P20 must keep these four invariants green after its changes. Evi
   EXPECT: NO_SKIPPED_TESTS
   EVIDENCE: exit=0; shell=/bin/sh; cwd=/Users/vikranty/.traycer/worktrees/vikrant038__lead-scoring-engine/traycer-lead-scoring-engine-silent-falcon-af1525f0fa76; path=b1f540f22f86/19 entries; EXPECT=matched; output-sha256=8d47b8a967cdb743cb11e43ecf89231aa4f9e4658ba04f9c1cc22f95164cab8e; output-bytes=17
 
+- [x] G-E2E-GREEN: Playwright E2E suite passes against the real server (all 7 journeys)
+  CHECK: bash -c 'lsof -ti:3000 | xargs kill -9 2>/dev/null; npm run test:e2e 2>&1 | tail -3'
+  EXPECT: 7 passed
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Users/vikranty/.traycer/worktrees/vikrant038__lead-scoring-engine/traycer-lead-scoring-engine-silent-falcon-af1525f0fa76; path=b1f540f22f86/19 entries; EXPECT=matched; output-sha256=0443777e1081e224678f67402c853838dd56c5c2fea0fe1f7ea3018d07f863c9; output-bytes=158
+
 - [x] G-NO-SECRETS: no hardcoded secrets introduced
   CHECK: bash -c 'count=$(grep -rniE "(api[_-]?key|secret|password)\s*[:=]\s*['\''\"][A-Za-z0-9]{8,}" src api public scripts --include="*.ts" --include="*.js" | wc -l | tr -d " "); if [ "$count" = "0" ]; then echo "NO_HARDCODED_SECRETS"; else echo "SECRETS_FOUND=$count"; fi'
   EXPECT: NO_HARDCODED_SECRETS
@@ -47,3 +52,7 @@ Each phase P1–P20 must keep these four invariants green after its changes. Evi
 | 15-16 | Views/client | 11056 | 10750 | pass | pass | 317 pass | 6da258f/d317e4a/a30a8dc/23192c9 |
 | 12-13 | Controllers | 10750 | 10729 | pass | pass | 317 pass | 14ae4b1 |
 | 17-18 | Assets/deps | 10729 | 10729 | pass | pass | 317 pass | fcfc34c/58bf3d2 |
+| 16 | Client JS full rewire | 10729 | 10585 | pass | pass | 317 pass | 8a234f1 |
+| 13 | auth.controller dedupe | 10585 | 10540 | pass | pass | 317 pass | 218f9c6 |
+| 7+14 | Repos + services | 10540 | 10533 | pass | pass | 317 pass | 9a61ca1 |
+| 20 | E2E | 10533 | 10533 | pass | pass | 317 pass + 7/7 E2E | (pending) |
