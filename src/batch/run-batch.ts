@@ -106,7 +106,7 @@ export async function runBatch(options: RunBatchOptions): Promise<RunBatchResult
   return { summary, results, summaryPath, csvPath };
 }
 
-function summarise(total: number, results: ProfileResult[], now: Date): BatchSummary {
+export function summarise(total: number, results: ProfileResult[], now: Date): BatchSummary {
   const bucketDistribution: Record<Bucket, number> = { HIGH: 0, MEDIUM: 0, LOW: 0, 'NOT FIT': 0 };
   let processed = 0;
   let rejected = 0;

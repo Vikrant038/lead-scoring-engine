@@ -5,6 +5,16 @@
  */
 import type { RunBatchResult } from '../batch/run-batch';
 
+/** Escape a string for safe interpolation into HTML (SEC-07: report content is LLM-derived). */
+function escapeHtml(value: unknown): string {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function scoreBar(score: number): string {
   const color =
     score >= 75 ? '#22c55e' : score >= 50 ? '#eab308' : score >= 25 ? '#f97316' : '#ef4444';
@@ -40,7 +50,7 @@ export function buildHtmlReport(result: RunBatchResult, persona?: string): strin
       (r, i) => `
     <tr style="border-bottom:1px solid #e5e7eb">
       <td style="padding:12px 16px;color:#6b7280;font-size:13px">${i + 1}</td>
-      <td style="padding:12px 16px;font-weight:600;font-size:13px;color:#111827">${r.profile_name}</td>
+      <td style="padding:12px 16px;font-weight:600;font-size:13px;color:#111827">${escapeHtml(r.profile_name)}</td>
       <td style="padding:12px 16px">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:20px;font-weight:800;color:#0029ff;min-width:36px">${r.icp_score}</span>
@@ -60,12 +70,12 @@ export function buildHtmlReport(result: RunBatchResult, persona?: string): strin
       <div style="width:32px;height:32px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center">
         <span style="font-size:16px">✉️</span>
       </div>
-      <h2 style="margin:0;font-size:16px;font-weight:700;color:#111827">Sample Outreach Email — ${sampleEmail.profile_name}</h2>
+      <h2 style="margin:0;font-size:16px;font-weight:700;color:#111827">Sample Outreach Email — ${escapeHtml(sampleEmail.profile_name)}</h2>
     </div>
     <div style="background:#f8fafc;border-radius:12px;padding:16px;border:1px solid #e2e8f0">
-      <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#374151">Subject: <span style="font-weight:400;color:#6b7280">${sampleEmail.outreach_email.subject}</span></p>
+      <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#374151">Subject: <span style="font-weight:400;color:#6b7280">${escapeHtml(sampleEmail.outreach_email.subject)}</span></p>
       <hr style="border:none;border-top:1px solid #e2e8f0;margin:12px 0" />
-      <pre style="margin:0;font-family:inherit;font-size:13px;color:#4b5563;white-space:pre-wrap;line-height:1.6">${sampleEmail.outreach_email.body}</pre>
+      <pre style="margin:0;font-family:inherit;font-size:13px;color:#4b5563;white-space:pre-wrap;line-height:1.6">${escapeHtml(sampleEmail.outreach_email.body)}</pre>
     </div>
   </div>`
     : '';

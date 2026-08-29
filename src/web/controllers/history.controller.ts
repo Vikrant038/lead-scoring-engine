@@ -5,7 +5,8 @@
 import type { RequestHandler } from 'express';
 import { UnauthorizedError } from '../../lib/errors/domain-errors';
 import { FileHandlerRepository } from '../../repositories/file-handler.repository';
-import type { Bucket, ProfileResult } from '../../domain/types';
+import { summarise as summariseBatch } from '../../batch/run-batch';
+import type { ProfileResult } from '../../domain/types';
 import type { WebContext } from '../context';
 
 export function summarise(results: ProfileResult[]): {
@@ -13,16 +14,12 @@ export function summarise(results: ProfileResult[]): {
   buckets: Record<string, number>;
   average: number;
 } {
-  const buckets: Record<Bucket, number> = { HIGH: 0, MEDIUM: 0, LOW: 0, 'NOT FIT': 0 };
-  const scores: number[] = [];
-  for (const result of results) {
-    if (result.bucket) buckets[result.bucket] += 1;
-    if (typeof result.icp_score === 'number') scores.push(result.icp_score);
-  }
-  const average = scores.length
-    ? Math.round((scores.reduce((sum, value) => sum + value, 0) / scores.length) * 10) / 10
-    : 0;
-  return { total: results.length, buckets, average };
+  const { bucketDistribution, averageScore, total } = summariseBatch(
+    results.length,
+    results,
+    new Date(),
+  );
+  return { total, buckets: bucketDistribution, average: averageScore };
 }
 
 export interface BatchHistory {
