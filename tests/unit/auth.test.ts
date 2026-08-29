@@ -37,7 +37,7 @@ jest.mock('../../src/lib/auth/auth', () => ({
 
 // ─── Imports (after the mock is set up) ──────────────────────────────────────
 
-import { migrate, seedDemoUser, wipeStaleDemoUser, seedDemoUserViaApi } from '../../src/db/migrate';
+import { migrate, wipeStaleDemoUser, seedDemoUserViaApi } from '../../src/db/migrate';
 import {
   loginPageController,
   loginPostController,
@@ -211,10 +211,6 @@ describe('db/migrate', () => {
       json: async () => ({ message: 'Server error' }),
     });
     await expect(seedDemoUserViaApi(3002)).rejects.toThrow();
-  });
-
-  it('seedDemoUser() stub resolves without doing anything', async () => {
-    await expect(seedDemoUser()).resolves.toBeUndefined();
   });
 });
 

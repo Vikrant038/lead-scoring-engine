@@ -130,10 +130,3 @@ export async function seedDemoUserViaApi(port: number): Promise<void> {
   // Ensure the seeded demo user is marked as verified
   sqlite.prepare("UPDATE user SET emailVerified = 1 WHERE email = 'demo@example.com'").run();
 }
-
-// Keep the old export name for backward compatibility with existing tests
-// (tests mock this anyway so the implementation change doesn't matter).
-export async function seedDemoUser(): Promise<void> {
-  // No-op: seeding now happens via seedDemoUserViaApi() after server listens.
-  // This stub exists so import references in tests and legacy callers don't break.
-}
