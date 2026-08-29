@@ -275,6 +275,7 @@
     <!-- Pass config data to JS -->
     <script id="config-data" type="application/json"><%- typeof configJson !== 'undefined' ? configJson : (typeof configString !== 'undefined' ? configString : '{}') %></script>
 
+    <script src="/js/api.js" nonce="<%= typeof cspNonce !== 'undefined' ? cspNonce : '' %>"></script>
     <script src="/js/config-editor.js" nonce="<%= typeof cspNonce !== 'undefined' ? cspNonce : '' %>"></script>
     <%- include('partials/footer') %>
   </body>
