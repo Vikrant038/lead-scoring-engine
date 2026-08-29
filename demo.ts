@@ -6,7 +6,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { config as loadEnv } from 'dotenv';
-import chalk from 'chalk';
 import { defaultConfig } from './src/config/config';
 import { createLogger, type LogLevel } from './src/lib/logger/logger';
 import { createLlmClient, type LlmEnv } from './src/llm/llm-client.factory';
@@ -16,15 +15,9 @@ import { parseDemoArgs } from './src/demo/demo-args';
 import { runDemo } from './src/demo/run-demo';
 import { buildHtmlReport } from './src/demo/demo-html-report';
 
-/* istanbul ignore next -- cosmetic colouriser for console output */
+/* istanbul ignore next -- console output for demo runs */
 function print(line: string): void {
-  let styled = line;
-  if (line.startsWith('===')) {
-    styled = chalk.bold.cyan(line);
-  } else if (line.endsWith(':')) {
-    styled = chalk.yellow(line);
-  }
-  process.stdout.write(`${styled}\n`);
+  process.stdout.write(`${line}\n`);
 }
 
 /* istanbul ignore next -- entry glue: resolves real env/llm and is exercised by `npm run demo` */
@@ -61,8 +54,8 @@ async function main(): Promise<void> {
     fs.mkdirSync(reportDir, { recursive: true });
     const reportPath = path.join(reportDir, 'demo-report.html');
     fs.writeFileSync(reportPath, html, 'utf8');
-    print(chalk.bold.green(`\n✅ HTML report written to: ${reportPath}`));
-    print(chalk.gray('   Open it in your browser to see the full report.'));
+    print(`\n✅ HTML report written to: ${reportPath}`);
+    print('   Open it in your browser to see the full report.');
   }
 }
 
@@ -70,7 +63,7 @@ async function main(): Promise<void> {
 if (require.main === module) {
   main().catch((error: unknown) => {
     // eslint-disable-next-line no-console
-    console.error(chalk.red('Demo failed:'), error);
+    console.error('Demo failed:', error);
     process.exit(1);
   });
 }
