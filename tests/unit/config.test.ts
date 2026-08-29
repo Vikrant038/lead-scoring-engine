@@ -1,6 +1,6 @@
 import { defaultConfig } from '../../src/config/config';
-import { appConfigSchema } from '../../src/config/config.schema';
-import { ConfigService } from '../../src/config/config.service';
+import { appConfigSchema } from '../../src/config/config';
+import { ConfigService } from '../../src/config/config';
 import { InvalidConfigError } from '../../src/lib/errors/domain-errors';
 
 describe('defaultConfig', () => {

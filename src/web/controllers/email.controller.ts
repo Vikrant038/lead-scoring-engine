@@ -3,10 +3,11 @@
  * regenerate a single draft on demand, export all drafts, and clear the session's data silo.
  */
 import type { RequestHandler } from 'express';
-import { NotFoundError, UnauthorizedError, ValidationError } from '../../lib/errors/domain-errors';
+import { NotFoundError, ValidationError } from '../../lib/errors/domain-errors';
+import { requireUserId } from '../middleware/auth.middleware';
 import { emailSettingsSchema } from '../../schemas/email-settings.schema';
 import { FileHandlerRepository } from '../../repositories/file-handler.repository';
-import type { EmailSettings } from '../../domain/result.types';
+import type { EmailSettings } from '../../domain/types';
 import type { WebContext } from '../context';
 
 const FALLBACK_SETTINGS: EmailSettings = {
@@ -44,10 +45,7 @@ export const regenerateEmailController =
   (ctx: WebContext): RequestHandler =>
   async (req, res, next) => {
     try {
-      const userId = req.user?.id;
-      if (!userId) {
-        throw new UnauthorizedError();
-      }
+      const userId = requireUserId(req);
       const dirs = ctx.sessionStore.ensure(userId);
       const fileHandler = new FileHandlerRepository(dirs, ctx.logger);
       const result = fileHandler.readResult(req.params.recordId);
@@ -73,10 +71,7 @@ export const exportEmailsController =
   (ctx: WebContext): RequestHandler =>
   (req, res, next) => {
     try {
-      const userId = req.user?.id;
-      if (!userId) {
-        throw new UnauthorizedError();
-      }
+      const userId = requireUserId(req);
       const dirs = ctx.sessionStore.ensure(userId);
       const results = new FileHandlerRepository(dirs, ctx.logger).listResults();
       const blocks = results
@@ -101,10 +96,7 @@ export const clearDataController =
   (ctx: WebContext): RequestHandler =>
   (req, res, next) => {
     try {
-      const userId = req.user?.id;
-      if (!userId) {
-        throw new UnauthorizedError();
-      }
+      const userId = requireUserId(req);
       ctx.sessionStore.clear(userId);
       req.session.selectedPersona = undefined;
       req.session.emailSettings = undefined;

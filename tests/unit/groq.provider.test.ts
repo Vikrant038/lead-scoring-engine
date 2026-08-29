@@ -11,8 +11,7 @@ import {
   GROQ_DEFAULT_FALLBACK_MODEL,
 } from '../../src/llm/groq.provider';
 import { createLlmClient } from '../../src/llm/llm-client.factory';
-import { DynamicLlmClient } from '../../src/llm/dynamic-llm.client';
-import { ConfigService } from '../../src/config/config.service';
+import { createDynamicLlmClient } from '../../src/llm/llm-client.factory';
 import { defaultConfig } from '../../src/config/config';
 import { NullProvider } from '../../src/llm/null.provider';
 
@@ -265,8 +264,8 @@ describe('Groq Factory and Dynamic Integration', () => {
       ...defaultConfig,
       llm: { ...defaultConfig.llm, provider: 'groq' as const, apiKey: 'gsk_dyn' },
     };
-    const dynamicClient = new DynamicLlmClient(
-      new ConfigService(config),
+    const dynamicClient = createDynamicLlmClient(
+      config,
       {
         GROQ_API_KEY: 'gsk_dyn',
         GROQ_MODEL: 'dyn-20b',
@@ -284,7 +283,7 @@ describe('Groq Factory and Dynamic Integration', () => {
       llm: { ...defaultConfig.llm, provider: 'groq' as const, apiKey: undefined },
     };
     const nullFallback = new NullProvider();
-    const dynamicClient = new DynamicLlmClient(new ConfigService(config), {}, logger, nullFallback);
+    const dynamicClient = createDynamicLlmClient(config, {}, logger, nullFallback);
     expect(dynamicClient.available).toBe(false);
   });
 });

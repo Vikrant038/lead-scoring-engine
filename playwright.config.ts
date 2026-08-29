@@ -13,6 +13,7 @@ export default defineConfig({
   },
   webServer: {
     command: 'npm run dev:server',
+    env: { E2E_DISABLE_RATE_LIMIT: 'true' },
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,

@@ -2,8 +2,8 @@
  * Demo summary report (FR-15-008/009/010). Pure string-building so the console output is fully
  * testable; the demo entry point colourises and prints the returned lines.
  */
-import type { Bucket, ProfileResult } from '../domain/result.types';
-import type { PersonaFitResult } from '../domain/persona.types';
+import type { Bucket, ProfileResult } from '../domain/types';
+import type { PersonaFitResult } from '../domain/types';
 import type { RunBatchResult } from '../batch/run-batch';
 
 const BUCKETS: Bucket[] = ['HIGH', 'MEDIUM', 'LOW', 'NOT FIT'];

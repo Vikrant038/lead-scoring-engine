@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { Request, Response } from 'express';
 import { defaultConfig } from '../../src/config/config';
-import { ConfigService } from '../../src/config/config.service';
+import { ConfigService } from '../../src/config/config';
 import { NullProvider } from '../../src/llm/null.provider';
 import { OutreachEmailService } from '../../src/modules/outreach-email.service';
 import { createProfiler } from '../../src/batch/run-batch';
@@ -15,7 +15,7 @@ import {
 import { FileHandlerRepository } from '../../src/repositories/file-handler.repository';
 import { PersonaRepository } from '../../src/repositories/persona.repository';
 import { SessionStoreRepository } from '../../src/repositories/session-store.repository';
-import type { ProfileResult } from '../../src/domain/result.types';
+import type { ProfileResult } from '../../src/domain/types';
 import type { WebContext } from '../../src/web/context';
 import {
   configPageController,
@@ -460,12 +460,14 @@ describe('web controllers (unit)', () => {
       expect(next).toHaveBeenCalledWith(expect.any(Error));
 
       next.mockReset();
-      jobController(ctx)(req({ user: undefined, params: { jobId: 'j1' } }), mockRes(), next);
-      expect(next).toHaveBeenCalledWith(expect.any(Error));
+      // jobController/queueController are fully synchronous; Express converts their sync
+      // throw into next(err).
+      expect(() =>
+        jobController(ctx)(req({ user: undefined, params: { jobId: 'j1' } }), mockRes(), next),
+      ).toThrow();
 
       next.mockReset();
-      queueController(ctx)(req({ user: undefined }), mockRes(), next);
-      expect(next).toHaveBeenCalledWith(expect.any(Error));
+      expect(() => queueController(ctx)(req({ user: undefined }), mockRes(), next)).toThrow();
     });
 
     it('protects default-icp from save and upload in persona controller', () => {

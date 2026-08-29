@@ -2,8 +2,8 @@
  * Outreach email generator (F-14). Drafts a bucket-toned email for scored leads. Returns null
  * when the LLM is unavailable, when the bucket is NOT FIT (FR-14-005), or on generation failure.
  */
-import type { Profile } from '../domain/profile.types';
-import type { Bucket, EmailSettings, OutreachEmail, ProfileResult } from '../domain/result.types';
+import type { Profile } from '../domain/types';
+import type { Bucket, EmailSettings, OutreachEmail, ProfileResult } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 import type { EmailInput, LLMClient } from '../llm/llm-client.interface';
 import type { EmailGenerator } from './profiler.service';

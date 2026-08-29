@@ -3,9 +3,9 @@
  * input profile sequentially, writing per-lead results, a batch summary, and a CSV export.
  * Shared by the CLI (Unit 8) and the demo (Unit 12).
  */
-import type { AppConfig } from '../config/config.schema';
-import type { BatchSummary } from '../domain/io.types';
-import type { Bucket, ProfileResult } from '../domain/result.types';
+import type { AppConfig } from '../config/config';
+import type { BatchSummary } from '../domain/types';
+import type { Bucket, ProfileResult } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 import type { LLMClient } from '../llm/llm-client.interface';
 import { FileHandlerRepository } from '../repositories/file-handler.repository';
@@ -106,7 +106,7 @@ export async function runBatch(options: RunBatchOptions): Promise<RunBatchResult
   return { summary, results, summaryPath, csvPath };
 }
 
-function summarise(total: number, results: ProfileResult[], now: Date): BatchSummary {
+export function summarise(total: number, results: ProfileResult[], now: Date): BatchSummary {
   const bucketDistribution: Record<Bucket, number> = { HIGH: 0, MEDIUM: 0, LOW: 0, 'NOT FIT': 0 };
   let processed = 0;
   let rejected = 0;

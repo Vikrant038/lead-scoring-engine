@@ -3,11 +3,11 @@
  * Data Quality -> Education -> Experience -> Thinking -> Scorer, then optional persona matching,
  * AI explanation, and outreach email, assembling a ProfileResult. Rejected profiles short-circuit.
  */
-import type { AppConfig } from '../config/config.schema';
-import type { InputProfile } from '../domain/io.types';
-import type { Persona } from '../domain/persona.types';
-import type { Profile } from '../domain/profile.types';
-import type { EmailSettings, OutreachEmail, ProfileResult } from '../domain/result.types';
+import type { AppConfig } from '../config/config';
+import type { InputProfile } from '../domain/types';
+import type { Persona } from '../domain/types';
+import type { Profile } from '../domain/types';
+import type { EmailSettings, OutreachEmail, ProfileResult } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 import type { DataQualityService } from './data-quality.service';
 import type { EducationService } from './education.service';

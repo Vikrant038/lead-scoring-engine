@@ -1,0 +1,100 @@
+<%# Shared shell for the auth pages (login/register/verify-email): dark glass aesthetic. %>
+<!doctype html>
+<html lang="en" class="">
+  <head>
+    <%- include('head') %>
+    <title><%= title %> — ICP Profiler</title>
+    <style>
+      <%- typeof extraStyles !== 'undefined' ? extraStyles : '' %>
+      .auth-bg {
+        background-color: #030712;
+        background-image:
+          radial-gradient(at 0% 0%, hsla(244, 50%, 15%, 0.4) 0px, transparent 50%),
+          radial-gradient(at 100% 100%, hsla(224, 50%, 10%, 0.3) 0px, transparent 50%),
+          linear-gradient(to bottom right, #030712, #0b0f19);
+      }
+      .auth-grid {
+        background-size: 40px 40px;
+        background-image:
+          linear-gradient(to right, rgba(0, 41, 255, 0.04) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(0, 41, 255, 0.04) 1px, transparent 1px);
+      }
+      .card-glass {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+      }
+      @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fadeUp { animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50%       { transform: translateY(-8px); }
+      }
+      .animate-float { animation: float 4s ease-in-out infinite; }
+      .input-field {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.10);
+        color: #f1f5f9;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .input-field:focus {
+        outline: none;
+        border-color: #0029ff;
+        box-shadow: 0 0 0 3px rgba(0, 41, 255, 0.15);
+      }
+      .input-field::placeholder { color: rgba(148, 163, 184, 0.5); }
+      .btn-primary {
+        background: linear-gradient(135deg, #0029ff, #0018c0);
+        color: white;
+        transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      }
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(0, 41, 255, 0.35);
+        opacity: 0.95;
+      }
+      .btn-primary:active { transform: translateY(0); }
+      .btn-demo {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.12);
+        color: #cbd5e1;
+        transition: background 0.2s, border-color 0.2s, color 0.2s;
+      }
+      .btn-demo:hover {
+        background: rgba(0, 41, 255, 0.12);
+        border-color: rgba(0, 41, 255, 0.4);
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body class="auth-bg min-h-screen flex items-center justify-center p-4">
+    <div class="absolute inset-0 auth-grid pointer-events-none"></div>
+
+    <!-- Decorative blobs -->
+    <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-[#0029ff]/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="relative w-full max-w-md animate-fadeUp">
+      <!-- Logo -->
+      <div class="text-center mb-8">
+        <a href="/" class="inline-flex items-center gap-3 group">
+          <img src="/luxury-hero.png" alt="ICP Profiler" class="w-10 h-10 rounded-xl object-cover animate-float shadow-lg shadow-[#0029ff]/20" />
+          <span class="text-2xl font-bold text-white tracking-tight">ICP Profiler</span>
+        </a>
+        <p class="mt-2 text-slate-400 text-sm">AI-powered lead intelligence</p>
+      </div>
+
+      <div class="card-glass rounded-2xl p-8 shadow-2xl">
+        <%- body %>
+      </div>
+
+      <p class="mt-6 text-center text-xs text-slate-600">
+        &copy; <%= new Date().getFullYear() %> ICP Profiler. All rights reserved.
+      </p>
+    </div>
+  </body>
+</html>

@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
-import type { Profile } from '../domain/profile.types';
+import type { Profile } from '../domain/types';
 import { ValidationError } from '../lib/errors/domain-errors';
 import { profileSchema } from '../schemas/profile.schema';
 

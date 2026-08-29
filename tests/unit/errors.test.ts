@@ -1,4 +1,4 @@
-import { ErrorCode } from '../../src/lib/errors/codes';
+import { ErrorCode } from '../../src/lib/errors/domain-errors';
 import {
   CsrfError,
   DomainError,

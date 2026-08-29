@@ -3,7 +3,7 @@
  * request-scoped correlation id.
  */
 import 'express-session';
-import type { EmailSettings } from '../domain/result.types';
+import type { EmailSettings } from '../domain/types';
 
 declare module 'express-session' {
   interface SessionData {

@@ -1,6 +1,6 @@
 import { MulterError } from 'multer';
 import type { Request, Response } from 'express';
-import { ErrorCode } from '../../src/lib/errors/codes';
+import { ErrorCode } from '../../src/lib/errors/domain-errors';
 import { ForbiddenError, NotFoundError } from '../../src/lib/errors/domain-errors';
 import { createErrorHandler } from '../../src/web/middleware/error-handler.middleware';
 import {
@@ -9,7 +9,7 @@ import {
   groupIntoBatches,
 } from '../../src/web/controllers/history.controller';
 import { QueueService } from '../../src/web/services/queue.service';
-import type { ProfileResult } from '../../src/domain/result.types';
+import type { ProfileResult } from '../../src/domain/types';
 import type { WebContext } from '../../src/web/context';
 import { silentLogger } from '../helpers/test-deps';
 

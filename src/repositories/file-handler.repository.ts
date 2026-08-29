@@ -5,8 +5,8 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import type { InputProfile, BatchSummary } from '../domain/io.types';
-import type { ProfileResult } from '../domain/result.types';
+import type { InputProfile, BatchSummary } from '../domain/types';
+import type { ProfileResult } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 import { NotFoundError } from '../lib/errors/domain-errors';
 import { resolveWithin, resultFileName } from '../lib/security/path-guard';
@@ -76,23 +76,12 @@ export class FileHandlerRepository {
     const profiles: InputProfile[] = [];
 
     for (const file of files) {
-      const stem = file.replace(/\.json$/i, '');
-      let data: unknown;
-      try {
-        const raw = fs.readFileSync(resolveWithin(this.paths.inputDir, file), 'utf8');
-        data = sanitizeJson(JSON.parse(raw));
-      } catch (error) {
-        this.logger.warn({ file, error: (error as Error).message }, 'skipping invalid JSON file');
+      const raw = this.readRawJson(resolveWithin(this.paths.inputDir, file));
+      if (raw === undefined) {
+        this.logger.warn({ file }, 'skipping invalid JSON file');
         continue;
       }
-
-      if (Array.isArray(data)) {
-        data.forEach((entry, index) => {
-          profiles.push(this.annotate(entry, this.recordIdFor(entry, `${stem}_${index}`), file));
-        });
-      } else {
-        profiles.push(this.annotate(data, this.recordIdFor(data, stem), file));
-      }
+      profiles.push(...this.parseAndAnnotate(raw, file));
     }
 
     return profiles;
@@ -104,14 +93,31 @@ export class FileHandlerRepository {
     if (!fs.existsSync(filePath)) {
       return [];
     }
-    const stem = fileName.replace(/\.json$/i, '');
-    const data: unknown = sanitizeJson(JSON.parse(fs.readFileSync(filePath, 'utf8')));
+    const raw = this.readRawJson(filePath);
+    if (raw === undefined) {
+      return [];
+    }
+    return this.parseAndAnnotate(raw, fileName);
+  }
+
+  /** Read a file as sanitized, parsed JSON; undefined when unreadable or invalid. */
+  private readRawJson(filePath: string): unknown | undefined {
+    try {
+      return sanitizeJson(JSON.parse(fs.readFileSync(filePath, 'utf8')));
+    } catch {
+      return undefined;
+    }
+  }
+
+  /** Split single-object or array payload into record-id-annotated input profiles. */
+  private parseAndAnnotate(data: unknown, sourceFile: string): InputProfile[] {
+    const stem = sourceFile.replace(/\.json$/i, '');
     if (Array.isArray(data)) {
       return data.map((entry, index) =>
-        this.annotate(entry, this.recordIdFor(entry, `${stem}_${index}`), fileName),
+        this.annotate(entry, this.recordIdFor(entry, `${stem}_${index}`), sourceFile),
       );
     }
-    return [this.annotate(data, this.recordIdFor(data, stem), fileName)];
+    return [this.annotate(data, this.recordIdFor(data, stem), sourceFile)];
   }
 
   /** Write a single lead result to `{recordId}_result.json` (FR-07-001). */

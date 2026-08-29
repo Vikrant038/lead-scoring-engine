@@ -4,7 +4,7 @@ import path from 'node:path';
 import request from 'supertest';
 import type { Express } from 'express';
 import { defaultConfig } from '../../src/config/config';
-import { ConfigService } from '../../src/config/config.service';
+import { ConfigService } from '../../src/config/config';
 import { NullProvider } from '../../src/llm/null.provider';
 import { OutreachEmailService } from '../../src/modules/outreach-email.service';
 import { PersonaRepository } from '../../src/repositories/persona.repository';
@@ -14,7 +14,6 @@ import { createJobProcessor } from '../../src/web/services/job-processor';
 import { buildContext, createApp } from '../../src/web/server';
 import type { WebContext } from '../../src/web/context';
 import { silentLogger } from '../helpers/test-deps';
-import { seedDemoUser } from '../../src/db/migrate';
 
 const LEAD = JSON.stringify({
   name: 'Jane',
@@ -22,13 +21,9 @@ const LEAD = JSON.stringify({
   jobs: ['CTO @ Google'],
 });
 
-// Seed a known test user into SQLite before integration tests that need auth.
+// Known test user for auth flows; the Better Auth mock resolves any sign-in.
 const TEST_EMAIL = 'testuser@example.com';
 const TEST_PASSWORD = 'test-password-123';
-
-async function seedTestUser(): Promise<void> {
-  await seedDemoUser();
-}
 
 function buildTestApp(): { app: Express; root: string } {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'web-'));
@@ -78,10 +73,6 @@ async function waitForJob(
 describe('web core (supertest)', () => {
   let app: Express;
   let root: string;
-
-  beforeAll(async () => {
-    await seedTestUser();
-  });
 
   beforeEach(() => {
     ({ app, root } = buildTestApp());

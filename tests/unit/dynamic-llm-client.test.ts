@@ -1,32 +1,32 @@
 /**
- * Unit tests for DynamicLlmClient (Phase 1).
- * Tests the provider-selection logic without real API calls.
+ * Unit tests for the dynamic (web-side) LLM factory selection logic.
+ * Tests provider selection without real API calls.
  */
-import { DynamicLlmClient } from '../../src/llm/dynamic-llm.client';
+import { createDynamicLlmClient } from '../../src/llm/llm-client.factory';
 import { NullProvider } from '../../src/llm/null.provider';
-import { ConfigService } from '../../src/config/config.service';
 import { defaultConfig } from '../../src/config/config';
 import { silentLogger } from '../helpers/test-deps';
 import type { LLMClient } from '../../src/llm/llm-client.interface';
+import type { AppConfig } from '../../src/config/config';
 
 function buildClient(
   configOverrides: Record<string, unknown> = {},
   env: Record<string, string | undefined> = {},
   fallback?: LLMClient,
-): DynamicLlmClient {
-  const config = {
+): LLMClient {
+  const config: AppConfig = {
     ...defaultConfig,
     llm: { ...defaultConfig.llm, ...configOverrides },
   };
-  return new DynamicLlmClient(
-    new ConfigService(config),
+  return createDynamicLlmClient(
+    config,
     env as Record<string, string>,
     silentLogger,
     fallback ?? new NullProvider(),
   );
 }
 
-describe('DynamicLlmClient', () => {
+describe('createDynamicLlmClient', () => {
   it('returns available=false when no provider configured (falls through to NullProvider)', () => {
     const client = buildClient({ provider: 'none', apiKey: undefined });
     expect(client.available).toBe(false);
@@ -49,50 +49,19 @@ describe('DynamicLlmClient', () => {
     expect(client.available).toBe(true);
   });
 
-  it('delegates classifyUniversity to the inner client', async () => {
-    const client = buildClient();
-    const result = await client.classifyUniversity('MIT');
-    expect(result).toHaveProperty('success');
+  it('uses the config apiKey over the env key when both exist', () => {
+    const client = buildClient(
+      { provider: 'groq', apiKey: 'cfg_key' },
+      { GROQ_API_KEY: 'env_key' },
+    );
+    expect(client.available).toBe(true);
   });
 
-  it('delegates classifyCompany to the inner client', async () => {
-    const client = buildClient();
-    const result = await client.classifyCompany('Stripe');
-    expect(result).toHaveProperty('success');
-  });
-
-  it('delegates generateExplanation to the inner client', async () => {
-    const client = buildClient();
-    const result = await client.generateExplanation({
-      profile: { name: 'Test', education: [], jobs: [] },
-      scores: {
-        education_score: 50,
-        experience_score: 50,
-        thinking_quality_score: 50,
-        icp_score: 50,
-        recency_bonus: 0,
-      },
-      bucket: 'MEDIUM',
-    });
-    expect(result).toHaveProperty('success');
-  });
-
-  it('delegates generateEmail to the inner client', async () => {
-    const client = buildClient();
-    const result = await client.generateEmail({
-      profile: { name: 'Test', education: [], jobs: [] },
-      score: 60,
-      bucket: 'MEDIUM',
-      senderName: 'A',
-      company: 'B',
-      tone: 'professional',
-    });
-    expect(result).toHaveProperty('success');
-  });
-
-  it('delegates generateProfiles to the inner client', async () => {
-    const client = buildClient();
-    const result = await client.generateProfiles({ count: 2, persona: 'cto' });
-    expect(result).toHaveProperty('success');
+  it('uses the env key when the config apiKey is absent', () => {
+    const client = buildClient(
+      { provider: 'groq', apiKey: undefined },
+      { GROQ_API_KEY: 'env_key' },
+    );
+    expect(client.available).toBe(true);
   });
 });

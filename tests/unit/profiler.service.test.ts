@@ -1,5 +1,5 @@
 import { defaultConfig } from '../../src/config/config';
-import type { InputProfile } from '../../src/domain/io.types';
+import type { InputProfile } from '../../src/domain/types';
 import { DataQualityService } from '../../src/modules/data-quality.service';
 import { EducationService } from '../../src/modules/education.service';
 import { ExperienceService } from '../../src/modules/experience.service';

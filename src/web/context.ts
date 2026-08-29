@@ -1,7 +1,7 @@
 /**
  * Shared web application context wired in the composition root and passed to controllers.
  */
-import type { ConfigService } from '../config/config.service';
+import type { ConfigService } from '../config/config';
 import type { Logger } from '../lib/logger/logger';
 import type { LLMClient } from '../llm/llm-client.interface';
 import type { EmailGenerator } from '../modules/profiler.service';

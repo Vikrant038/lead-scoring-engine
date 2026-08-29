@@ -4,9 +4,9 @@
  */
 import { config as loadEnv } from 'dotenv';
 import { defaultConfig } from '../config/config';
-import type { AppConfig } from '../config/config.schema';
-import type { BatchSummary } from '../domain/io.types';
-import type { ProfileResult } from '../domain/result.types';
+import type { AppConfig } from '../config/config';
+import type { BatchSummary } from '../domain/types';
+import type { ProfileResult } from '../domain/types';
 import { createLogger, type Logger, type LogLevel } from '../lib/logger/logger';
 import { createLlmClient, type LlmEnv } from '../llm/llm-client.factory';
 import { runBatch, type RunBatchResult } from '../batch/run-batch';

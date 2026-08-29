@@ -5,7 +5,7 @@
 import type { ErrorRequestHandler } from 'express';
 import { MulterError } from 'multer';
 import { DomainError, statusForError } from '../../lib/errors/domain-errors';
-import { ErrorCode } from '../../lib/errors/codes';
+import { ErrorCode } from '../../lib/errors/domain-errors';
 import type { Logger } from '../../lib/logger/logger';
 
 function classify(error: unknown): { status: number; code: string; message: string } {

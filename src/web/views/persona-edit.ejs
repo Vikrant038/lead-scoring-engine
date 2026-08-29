@@ -2,16 +2,7 @@
 <html lang="en">
   <head>
     <%- include('partials/head') %>
-    <style>
-      .form-section { transition: max-height 300ms ease-out, opacity 200ms ease-out; }
-      .form-section.collapsed { max-height: 0; opacity: 0; overflow: hidden; }
-      .section-header { transition: background-color 150ms ease; }
-      .section-header:hover { background-color: rgba(0, 41, 255, 0.03); }
-      .dark .section-header:hover { background-color: rgba(0, 41, 255, 0.05); }
-      .tag-input-wrapper:focus-within { border-color: #0029ff; box-shadow: 0 0 0 3px rgba(0, 41, 255, 0.1); }
-      .tag { animation: tagIn 200ms cubic-bezier(0.16, 1, 0.3, 1); }
-      @keyframes tagIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
-    </style>
+        <%- include('partials/editor-styles') %>
   </head>
   <body class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-150 flex flex-col min-h-screen" data-persona-id="<%= personaId %>">
     <%- include('partials/header') %>
@@ -248,6 +239,7 @@
 
     </main>
 
+    <script src="/js/api.js" nonce="<%= typeof cspNonce !== 'undefined' ? cspNonce : '' %>"></script>
     <script src="/js/persona-edit.js" nonce="<%= typeof cspNonce !== 'undefined' ? cspNonce : '' %>"></script>
     <%- include('partials/footer') %>
   </body>

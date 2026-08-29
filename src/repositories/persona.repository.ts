@@ -4,7 +4,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Persona } from '../domain/persona.types';
+import type { Persona } from '../domain/types';
 import type { Logger } from '../lib/logger/logger';
 import { NotFoundError, ValidationError } from '../lib/errors/domain-errors';
 import { personaSchema } from '../schemas/persona.schema';

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { defaultConfig } from '../../src/config/config';
-import { ConfigService } from '../../src/config/config.service';
+import { ConfigService } from '../../src/config/config';
 import { NullProvider } from '../../src/llm/null.provider';
 import { PersonaRepository } from '../../src/repositories/persona.repository';
 import { SessionStoreRepository } from '../../src/repositories/session-store.repository';

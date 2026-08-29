@@ -1,5 +1,5 @@
-import type { Profile } from '../../src/domain/profile.types';
-import type { ProfileResult } from '../../src/domain/result.types';
+import type { Profile } from '../../src/domain/types';
+import type { ProfileResult } from '../../src/domain/types';
 import type { EmailInput } from '../../src/llm/llm-client.interface';
 import { NullProvider } from '../../src/llm/null.provider';
 import { ExplanationService } from '../../src/modules/explanation.service';

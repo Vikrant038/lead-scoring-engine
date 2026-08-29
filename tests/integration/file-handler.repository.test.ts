@@ -5,7 +5,7 @@ import { Writable } from 'node:stream';
 import { FileHandlerRepository } from '../../src/repositories/file-handler.repository';
 import { NotFoundError } from '../../src/lib/errors/domain-errors';
 import { createLogger } from '../../src/lib/logger/logger';
-import type { ProfileResult } from '../../src/domain/result.types';
+import type { ProfileResult } from '../../src/domain/types';
 
 const silentLogger = createLogger(
   { level: 'error' },

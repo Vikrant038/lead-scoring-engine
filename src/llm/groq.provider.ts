@@ -3,17 +3,18 @@
  * Defaults to primary model 'openai/gpt-oss-20b' and falls back to 'openai/gpt-oss-120b'.
  */
 import type { LlmResult } from './llm-client.interface';
-import { BaseLlmProvider } from './base.provider';
+import { OpenAiCompatibleProvider } from './openai-compatible.provider';
 import type { Logger } from '../lib/logger/logger';
-
-interface GroqResponse {
-  choices?: { message?: { content?: string } }[];
-}
 
 export const GROQ_DEFAULT_PRIMARY_MODEL = 'openai/gpt-oss-20b';
 export const GROQ_DEFAULT_FALLBACK_MODEL = 'openai/gpt-oss-120b';
 
-export class GroqProvider extends BaseLlmProvider {
+export class GroqProvider extends OpenAiCompatibleProvider {
+  protected readonly endpointUrl = 'https://api.groq.com/openai/v1/chat/completions';
+  protected get providerName(): string {
+    return 'Groq';
+  }
+
   constructor(
     apiKey: string,
     model: string = GROQ_DEFAULT_PRIMARY_MODEL,
@@ -32,35 +33,8 @@ export class GroqProvider extends BaseLlmProvider {
     return this.fallbackModel;
   }
 
-  private async executeModelRequest(
-    modelName: string,
-    system: string,
-    user: string,
-  ): Promise<LlmResult<string>> {
-    const response = await this.postJson(
-      'https://api.groq.com/openai/v1/chat/completions',
-      { Authorization: `Bearer ${this.apiKey}` },
-      {
-        model: modelName,
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: user },
-        ],
-        temperature: 0,
-      },
-    );
-    if (!response.success) {
-      return { success: false, error: response.error };
-    }
-    const text = (response.data as GroqResponse)?.choices?.[0]?.message?.content;
-    if (typeof text !== 'string') {
-      return { success: false, error: 'empty Groq response' };
-    }
-    return { success: true, data: text };
-  }
-
   protected async request(system: string, user: string): Promise<LlmResult<string>> {
-    const primaryResult = await this.executeModelRequest(this.model, system, user);
+    const primaryResult = await super.request(system, user);
     if (primaryResult.success) {
       return primaryResult;
     }
@@ -70,19 +44,24 @@ export class GroqProvider extends BaseLlmProvider {
       'Groq primary model failed; falling back to secondary model',
     );
 
-    const fallbackResult = await this.executeModelRequest(this.fallbackModel, system, user);
-    if (fallbackResult.success) {
-      return fallbackResult;
+    const originalModel = this.model;
+    try {
+      // Re-issue the same request against the fallback model.
+      this.model = this.fallbackModel;
+      const fallbackResult = await super.request(system, user);
+      if (fallbackResult.success) {
+        return fallbackResult;
+      }
+      this.logger.error(
+        { primaryError: primaryResult.error, fallbackError: fallbackResult.error },
+        'Groq primary and fallback models both failed',
+      );
+      return {
+        success: false,
+        error: `Groq error: primary (${primaryResult.error}); fallback (${fallbackResult.error})`,
+      };
+    } finally {
+      this.model = originalModel;
     }
-
-    this.logger.error(
-      { primaryError: primaryResult.error, fallbackError: fallbackResult.error },
-      'Groq primary and fallback models both failed',
-    );
-
-    return {
-      success: false,
-      error: `Groq error: primary (${primaryResult.error}); fallback (${fallbackResult.error})`,
-    };
   }
 }
