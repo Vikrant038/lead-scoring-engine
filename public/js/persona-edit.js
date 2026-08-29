@@ -1,12 +1,10 @@
 /* eslint-disable */
 (function () {
   document.addEventListener('DOMContentLoaded', () => {
-    const csrfTokenEl = document.querySelector('meta[name="csrf-token"]');
-    const csrfToken = csrfTokenEl ? csrfTokenEl.getAttribute('content') : '';
+    const { apiFetch } = window.IcpApi;
     const personaId = document.body.getAttribute('data-persona-id');
     const textarea = document.getElementById('persona-json');
     const saveBtn = document.getElementById('save-btn');
-    const toastContainer = document.getElementById('toast-container');
     const statusEl = document.getElementById('status');
     const toggleRawBtn = document.getElementById('toggle-raw-btn');
     const rawPanel = document.getElementById('raw-json-panel');
@@ -28,7 +26,7 @@
       if (statusEl) statusEl.textContent = text;
     }
 
-    const showToast = window.IcpApi.showToast;
+    const { showToast } = window.IcpApi;
 
     // --- Toggle Raw/Form ---
     if (toggleRawBtn) {
@@ -358,33 +356,19 @@
           saveBtn.textContent = 'Saving...';
           updateStatusText('Saving...');
 
-          const res = await fetch(`/api/persona/${encodeURIComponent(personaId)}`, {
+          await apiFetch(`/api/persona/${encodeURIComponent(personaId)}`, {
             method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRF-Token': csrfToken
-            },
-            body: JSON.stringify(payload)
+            body: payload,
           });
 
-          const data = await res.json().catch(() => ({}));
-
-          if (res.ok) {
-            showToast('Persona saved successfully!', 'success');
-            updateStatusText('Saved.');
-            setTimeout(() => {
-              window.location.href = '/personas';
-            }, 1000);
-          } else {
-            const errorMsg = (data.error && data.error.message) || 'Failed to save persona';
-            showToast(errorMsg, 'error');
-            updateStatusText('Save failed.');
-            saveBtn.disabled = false;
-            saveBtn.textContent = 'Save Changes';
-          }
+          showToast('Persona saved successfully!', 'success');
+          updateStatusText('Saved.');
+          setTimeout(() => {
+            window.location.href = '/personas';
+          }, 1000);
         } catch (err) {
-          showToast('Network error during save.', 'error');
-          updateStatusText('Network error.');
+          showToast(err.message, 'error');
+          updateStatusText('Save failed.');
           saveBtn.disabled = false;
           saveBtn.textContent = 'Save Changes';
         }

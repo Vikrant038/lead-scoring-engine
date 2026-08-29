@@ -603,6 +603,7 @@
 
     </main>
 
+    <script src="/js/api.js" nonce="<%= typeof cspNonce !== 'undefined' ? cspNonce : '' %>"></script>
     <script src="/js/history.js" nonce="<%= typeof cspNonce !== 'undefined' ? cspNonce : '' %>"></script>
     <%- include('partials/footer') %>
   </body>

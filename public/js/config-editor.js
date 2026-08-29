@@ -1,12 +1,10 @@
 /* eslint-disable */
 (function () {
   document.addEventListener('DOMContentLoaded', () => {
-    const csrfTokenEl = document.querySelector('meta[name="csrf-token"]');
-    const csrfToken = csrfTokenEl ? csrfTokenEl.getAttribute('content') : '';
+    const { apiFetch } = window.IcpApi;
     const textarea = document.getElementById('config-json');
     const saveBtn = document.getElementById('save-btn');
     const resetBtn = document.getElementById('reset-btn');
-    const toastContainer = document.getElementById('toast-container');
     const statusEl = document.getElementById('status');
     const toggleRawBtn = document.getElementById('toggle-raw-btn');
     const rawPanel = document.getElementById('raw-json-panel');
@@ -28,7 +26,7 @@
       if (statusEl) statusEl.textContent = text;
     }
 
-    const showToast = window.IcpApi.showToast;
+    const { showToast } = window.IcpApi;
 
     // --- Toggle Raw/Form ---
     if (toggleRawBtn) {
@@ -266,28 +264,17 @@
           configPayload = collectFormData();
         }
         try {
-          var response = await fetch('/api/config', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-            body: JSON.stringify(configPayload)
-          });
-          var data = await response.json().catch(function () { return {}; });
-          if (response.ok) {
-            updateStatusText('Saved.');
-            showToast('Configuration saved successfully', 'success');
-            if (data.config) {
-              currentConfig = data.config;
-              if (!isRawMode) populateForm(currentConfig);
-              if (textarea) textarea.value = JSON.stringify(currentConfig, null, 2);
-            }
-          } else {
-            var errorMsg = (data.error && data.error.message) || 'Save failed';
-            updateStatusText(errorMsg);
-            showToast(errorMsg, 'error');
+          var data = await apiFetch('/api/config', { method: 'POST', body: configPayload });
+          updateStatusText('Saved.');
+          showToast('Configuration saved successfully', 'success');
+          if (data.config) {
+            currentConfig = data.config;
+            if (!isRawMode) populateForm(currentConfig);
+            if (textarea) textarea.value = JSON.stringify(currentConfig, null, 2);
           }
         } catch (err) {
-          updateStatusText('Network error');
-          showToast('Network error', 'error');
+          updateStatusText(err.message);
+          showToast(err.message, 'error');
         }
       });
     }
@@ -296,12 +283,8 @@
     if (resetBtn) {
       resetBtn.addEventListener('click', async function () {
         try {
-          var response = await fetch('/api/config/reset', {
-            method: 'POST',
-            headers: { 'X-CSRF-Token': csrfToken }
-          });
-          var data = await response.json().catch(function () { return {}; });
-          if (response.ok && data.config) {
+          var data = await apiFetch('/api/config/reset', { method: 'POST' });
+          if (data.config) {
             currentConfig = data.config;
             populateForm(currentConfig);
             if (textarea) textarea.value = JSON.stringify(currentConfig, null, 2);
@@ -312,8 +295,8 @@
             showToast('Reset failed', 'error');
           }
         } catch (err) {
-          updateStatusText('Network error');
-          showToast('Network error', 'error');
+          updateStatusText(err.message);
+          showToast(err.message, 'error');
         }
       });
     }

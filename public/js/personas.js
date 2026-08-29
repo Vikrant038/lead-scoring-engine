@@ -1,9 +1,7 @@
 /* eslint-disable */
 (function () {
   document.addEventListener('DOMContentLoaded', () => {
-    // Read CSRF Token from meta tag
-    const csrfTokenEl = document.querySelector('meta[name="csrf-token"]');
-    const csrfToken = csrfTokenEl ? csrfTokenEl.getAttribute('content') : '';
+    const { apiFetch } = window.IcpApi;
 
     // --- DOM Elements ---
     const uploadModal = document.getElementById('upload-modal');
@@ -22,6 +20,14 @@
 
     const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
     const statusEl = document.getElementById('status');
+
+    /** Show an error line in the modal's status element. */
+    function showUploadError(msg) {
+      if (!uploadStatus) return;
+      uploadStatus.textContent = msg;
+      uploadStatus.className = 'text-xs font-semibold text-center mt-2 text-red-600';
+      uploadStatus.classList.remove('hidden');
+    }
 
     let activeModal = null;
     let lastFocusedElement = null;
@@ -285,9 +291,7 @@
 
         if (!name || !description || !id) {
           if (uploadStatus) {
-            uploadStatus.textContent = 'All fields are required.';
-            uploadStatus.className = 'text-xs font-semibold text-center mt-2 text-red-650';
-            uploadStatus.classList.remove('hidden');
+            showUploadError('All fields are required.');
           }
           return;
         }
@@ -299,13 +303,9 @@
             submitBtn.textContent = 'Creating...';
           }
 
-          const res = await fetch(`/api/persona/${encodeURIComponent(id)}`, {
+          await apiFetch(`/api/persona/${encodeURIComponent(id)}`, {
             method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRF-Token': csrfToken
-            },
-            body: JSON.stringify({
+            body: {
               name,
               description,
               weights: {
@@ -321,29 +321,14 @@
                 preferred_companies_tiers: ["tier_1"],
                 min_years_experience: 8
               },
-              skills_must_have: ["Architect", "Scalability", "System Design"]
-            })
+              skills_must_have: ["Architect", "Scalability", "System Design"],
+            },
           });
 
-          const data = await res.json().catch(() => ({}));
-
-          if (res.ok) {
-            closeModal(uploadModal);
-            window.location.href = `/personas/${id}/edit`;
-          } else {
-            const errorMsg = (data.error && data.error.message) || 'Failed to create persona';
-            if (uploadStatus) {
-              uploadStatus.textContent = errorMsg;
-              uploadStatus.className = 'text-xs font-semibold text-center mt-2 text-red-650';
-              uploadStatus.classList.remove('hidden');
-            }
-          }
+          closeModal(uploadModal);
+          window.location.href = `/personas/${id}/edit`;
         } catch (err) {
-          if (uploadStatus) {
-            uploadStatus.textContent = 'Network error during creation.';
-            uploadStatus.className = 'text-xs font-semibold text-center mt-2 text-red-650';
-            uploadStatus.classList.remove('hidden');
-          }
+          showUploadError(err.message || 'Failed to create persona');
         } finally {
           const submitBtn = document.getElementById('create-persona-submit-btn');
           if (submitBtn) {
@@ -396,9 +381,7 @@
       uploadBtn.addEventListener('click', async () => {
         if (!fileInput.files || !fileInput.files[0]) {
           if (uploadStatus) {
-            uploadStatus.textContent = 'Choose a JSON file first.';
-            uploadStatus.className = 'text-xs font-semibold text-center mt-2 text-red-600';
-            uploadStatus.classList.remove('hidden');
+            showUploadError('Choose a JSON file first.');
           }
           return;
         }
@@ -410,31 +393,11 @@
           uploadBtn.disabled = true;
           uploadBtn.textContent = 'Uploading...';
           
-          const res = await fetch('/api/upload-persona', {
-            method: 'POST',
-            headers: { 'X-CSRF-Token': csrfToken },
-            body: formData,
-          });
-
-          const data = await res.json().catch(() => ({}));
-          
-          if (res.ok) {
-            closeModal(uploadModal);
-            window.location.reload();
-          } else {
-            const errorMsg = (data.error && data.error.message) || 'Upload failed';
-            if (uploadStatus) {
-              uploadStatus.textContent = errorMsg;
-              uploadStatus.className = 'text-xs font-semibold text-center mt-2 text-red-600';
-              uploadStatus.classList.remove('hidden');
-            }
-          }
+          await apiFetch('/api/upload-persona', { method: 'POST', body: formData });
+          closeModal(uploadModal);
+          window.location.reload();
         } catch (e) {
-          if (uploadStatus) {
-            uploadStatus.textContent = 'Network error during upload.';
-            uploadStatus.className = 'text-xs font-semibold text-center mt-2 text-red-600';
-            uploadStatus.classList.remove('hidden');
-          }
+          showUploadError(e.message || 'Upload failed');
         } finally {
           uploadBtn.disabled = false;
           uploadBtn.textContent = 'Upload';
@@ -445,19 +408,10 @@
     // --- Set Active Handlers ---
     async function setActivePersona(personaId) {
       try {
-        const res = await fetch('/api/set-persona', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json', 
-            'X-CSRF-Token': csrfToken 
-          },
-          body: JSON.stringify({ personaId }),
-        });
-        if (res.ok) {
-          window.location.reload();
-        }
+        await apiFetch('/api/set-persona', { method: 'POST', body: { personaId } });
+        window.location.reload();
       } catch (err) {
-        console.error('Failed to set active persona:', err);
+        console.error('Failed to set active persona:', err.message);
       }
     }
 
@@ -498,19 +452,13 @@
           confirmDeleteBtn.disabled = true;
           confirmDeleteBtn.textContent = 'Deleting...';
 
-          const res = await fetch(`/api/persona/${encodeURIComponent(personaIdToDelete)}`, {
+          await apiFetch(`/api/persona/${encodeURIComponent(personaIdToDelete)}`, {
             method: 'DELETE',
-            headers: { 'X-CSRF-Token': csrfToken }
           });
-
-          if (res.ok) {
-            closeModal(deleteModal);
-            window.location.reload();
-          } else {
-            console.error('Delete action failed.');
-          }
+          closeModal(deleteModal);
+          window.location.reload();
         } catch (err) {
-          console.error('Network error during delete:', err);
+          console.error('Delete action failed:', err.message);
         } finally {
           confirmDeleteBtn.disabled = false;
           confirmDeleteBtn.textContent = 'Confirm Delete';

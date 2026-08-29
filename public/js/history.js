@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Read CSRF Token from meta tag
-  const csrfTokenElement = document.querySelector('meta[name="csrf-token"]');
-  const csrfToken = csrfTokenElement ? csrfTokenElement.getAttribute('content') : '';
+  const { apiFetch } = window.IcpApi;
 
   // --- Count-Up Stat Cards Animation ---
   function animateCounter(counter) {
@@ -295,23 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (container) container.classList.add('opacity-40');
 
       try {
-        // Try POST first
-        let res = await fetch(`/api/regenerate-email/${recordId}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken
-          }
-        });
-
-        // Fallback to GET if POST is not supported/mapped
-        if (res.status === 404 || res.status === 405) {
-          res = await fetch(`/api/regenerate-email/${recordId}`);
-        }
-
-        if (!res.ok) throw new Error('Regeneration request failed.');
-
-        const data = await res.json();
+        const data = await apiFetch(`/api/regenerate-email/${encodeURIComponent(recordId)}`);
         if (data.success && data.email) {
           if (container) {
             container.classList.add('opacity-0');
@@ -339,20 +322,10 @@ document.addEventListener('DOMContentLoaded', () => {
     clearDataBtn.addEventListener('click', async () => {
       if (confirm('Are you sure you want to clear all data? This will permanently delete your session history.')) {
         try {
-          const res = await fetch('/api/clear-data', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRF-Token': csrfToken
-            }
-          });
-          if (res.ok) {
-            window.location.reload();
-          } else {
-            console.error('Failed to clear session data.');
-          }
+          await apiFetch('/api/clear-data', { method: 'POST' });
+          window.location.reload();
         } catch (err) {
-          console.error('Network error during data clear:', err);
+          console.error('Failed to clear session data:', err.message);
         }
       }
     });

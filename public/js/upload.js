@@ -1,7 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Read CSRF Token from meta tag
-  const csrfTokenElement = document.querySelector('meta[name="csrf-token"]');
-  const csrfToken = csrfTokenElement ? csrfTokenElement.getAttribute('content') : '';
+  const { apiFetch, escapeHtml } = window.IcpApi;
 
   // CTA Button smooth scroll
   const ctaButton = document.getElementById('cta-button');
@@ -131,24 +129,15 @@ document.addEventListener('DOMContentLoaded', () => {
     closeDropdown();
 
     try {
-      const res = await fetch('/api/set-persona', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken
-        },
-        body: JSON.stringify({ personaId })
-      });
-      if (res.ok) {
-        // Dynamic header badge update
-        const headerBadgeText = document.querySelector('[aria-describedby="persona-tooltip"] .font-bold');
-        if (headerBadgeText) {
-          headerBadgeText.textContent = personaName;
-        }
-        const tooltip = document.getElementById('persona-tooltip');
-        if (tooltip) {
-          tooltip.textContent = `Current Profile: ${personaName}`;
-        }
+      await apiFetch('/api/set-persona', { method: 'POST', body: { personaId } });
+      // Dynamic header badge update
+      const headerBadgeText = document.querySelector('[aria-describedby="persona-tooltip"] .font-bold');
+      if (headerBadgeText) {
+        headerBadgeText.textContent = personaName;
+      }
+      const tooltip = document.getElementById('persona-tooltip');
+      if (tooltip) {
+        tooltip.textContent = `Current Profile: ${personaName}`;
       }
     } catch (err) {
       console.error('Failed to set scoring persona:', err);
@@ -276,20 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (statusContainer) statusContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }, 100);
 
-      const res = await fetch('/api/demo-batch', {
-        method: 'POST',
-        headers: {
-          'X-CSRF-Token': csrfToken,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Demo batch start failed.');
-      }
-
-      const data = await res.json();
+      const data = await apiFetch('/api/demo-batch', { method: 'POST' });
       pollJobStatus(data.jobId);
     } catch (err) {
       showError(err.message || 'An unexpected error occurred starting demo batch.');
@@ -337,20 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (statusContainer) statusContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }, 100);
 
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: {
-          'X-CSRF-Token': csrfToken
-        },
-        body: formData
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Server upload failed.');
-      }
-
-      const data = await res.json();
+      const data = await apiFetch('/api/upload', { method: 'POST', body: formData });
       pollJobStatus(data.jobId);
 
     } catch (err) {
@@ -374,10 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function checkJob() {
       try {
-        const res = await fetch(`/api/job/${jobId}`);
-        if (!res.ok) throw new Error('Could not retrieve job status');
-
-        const job = await res.json();
+        const job = await apiFetch(`/api/job/${encodeURIComponent(jobId)}`);
 
         if (progressBar) progressBar.style.width = `${job.progress}%`;
         if (statusBadge) statusBadge.textContent = job.status;
@@ -427,10 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!queueContainer || !queueCount || !queueEmpty) return;
 
     try {
-      const res = await fetch('/api/queue');
-      if (!res.ok) throw new Error('Failed to retrieve queue list');
-
-      const data = await res.json();
+      const data = await apiFetch('/api/queue');
       const jobs = data.jobs || [];
       const pendingJobs = jobs.filter(job => job.status === 'queued' || job.status === 'processing');
 
@@ -466,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
           card.className = 'queue-card-enter p-4 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between shadow-sm transition-all duration-300';
           card.innerHTML = `
             <div class="flex flex-col min-w-0 mr-4">
-              <span class="text-sm font-semibold text-gray-800 truncate">${job.fileName}</span>
+              <span class="text-sm font-semibold text-gray-800 truncate">${escapeHtml(job.fileName)}</span>
               <span class="text-xs text-gray-500 mt-0.5">Progress: <span class="job-progress-text">${job.progress}%</span></span>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">

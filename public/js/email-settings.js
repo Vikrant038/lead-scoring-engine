@@ -1,9 +1,7 @@
 /* eslint-disable */
 (function () {
   document.addEventListener('DOMContentLoaded', () => {
-    // Read CSRF Token from meta tag
-    const csrfTokenEl = document.querySelector('meta[name="csrf-token"]');
-    const csrfToken = csrfTokenEl ? csrfTokenEl.getAttribute('content') : '';
+    const { apiFetch } = window.IcpApi;
 
     const form = document.getElementById('email-form');
     const toneInput = document.getElementById('tone');
@@ -81,19 +79,12 @@
         updateStatusText('');
 
         try {
-          const res = await fetch('/api/email-settings', {
+          await apiFetch('/api/email-settings', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRF-Token': csrfToken
-            },
-            body: JSON.stringify({ senderName, company, tone })
+            body: { senderName, company, tone },
           });
 
-          const data = await res.json().catch(() => ({}));
-
-          if (res.ok) {
-            updateStatusText('Saved.');
+          updateStatusText('Saved.');
             
             // Show premium success scale/fade animations
             if (successOverlay) {
@@ -113,18 +104,9 @@
             setTimeout(() => {
               window.location.href = '/history';
             }, 1000);
-          } else {
-            const errorMsg = (data.error && data.error.message) || 'Save failed';
-            updateStatusText(errorMsg);
-            
-            // Restore button UI state
-            if (submitBtn) submitBtn.disabled = false;
-            if (btnText) btnText.classList.remove('hidden');
-            if (btnSpinner) btnSpinner.classList.add('hidden');
-          }
         } catch (err) {
-          updateStatusText('Network error');
-          
+          updateStatusText(err.message);
+
           // Restore button UI state
           if (submitBtn) submitBtn.disabled = false;
           if (btnText) btnText.classList.remove('hidden');

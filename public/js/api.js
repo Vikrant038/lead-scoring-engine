@@ -9,16 +9,23 @@
   }
 
   /**
-   * JSON request with CSRF header. Returns parsed body; throws Error(message) on HTTP failure.
+   * JSON request with CSRF header. Returns parsed body. Throws Error(message) on HTTP
+   * failure (server message when available) and Error('Network error') on connectivity loss.
    */
   async function apiFetch(url, options) {
     const opts = options || {};
     const headers = Object.assign({}, opts.headers, { 'X-CSRF-Token': csrfToken() });
-    if (opts.body && typeof opts.body !== 'string' && !(opts.body instanceof FormData)) {
+    let body = opts.body;
+    if (body !== undefined && typeof body !== 'string' && !(body instanceof FormData)) {
       headers['Content-Type'] = 'application/json';
-      opts.body = JSON.stringify(opts.body);
+      body = JSON.stringify(body);
     }
-    const res = await fetch(url, Object.assign({}, opts, { headers }));
+    let res;
+    try {
+      res = await fetch(url, Object.assign({}, opts, { headers, body }));
+    } catch (err) {
+      throw new Error('Network error');
+    }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       throw new Error((data.error && data.error.message) || (data.message || 'Request failed'));
@@ -66,5 +73,15 @@
     }, 3000);
   }
 
-  window.IcpApi = { csrfToken, apiFetch, showToast };
+  /** Escape a string for safe interpolation into HTML templates. */
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  window.IcpApi = { csrfToken, apiFetch, showToast, escapeHtml };
 })();
