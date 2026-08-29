@@ -5,6 +5,7 @@
     <%- include('head') %>
     <title><%= title %> — ICP Profiler</title>
     <style>
+      <%- typeof extraStyles !== 'undefined' ? extraStyles : '' %>
       .auth-bg {
         background-color: #030712;
         background-image:
