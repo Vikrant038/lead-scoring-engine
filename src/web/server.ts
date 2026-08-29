@@ -31,7 +31,7 @@ import { createErrorHandler } from './middleware/error-handler.middleware';
 import { QueueService } from './services/queue.service';
 import { createJobProcessor } from './services/job-processor';
 import { createRouter } from './routes/index.routes';
-import { DynamicLlmClient } from '../llm/dynamic-llm.client';
+import { createDynamicLlmClient } from '../llm/llm-client.factory';
 import type { WebContext } from './context';
 import { migrate, wipeStaleDemoUser, seedDemoUserViaApi } from '../db/migrate';
 import { auth } from '../lib/auth/auth';
@@ -44,7 +44,7 @@ const SESSIONS_ROOT = path.join(process.cwd(), 'data', 'sessions');
 
 export function buildContext(config: AppConfig, logger: Logger, llm: LLMClient): WebContext {
   const configService = new ConfigService(config);
-  const dynamicLlm = new DynamicLlmClient(configService, process.env, logger, llm);
+  const dynamicLlm = createDynamicLlmClient(configService.get(), process.env, logger, llm);
   const sessionStore = new SessionStoreRepository(SESSIONS_ROOT, logger);
   const personaRepo = new PersonaRepository(configService.get().paths.personasDir, logger);
   const emailGenerator = new OutreachEmailService(dynamicLlm, logger);
