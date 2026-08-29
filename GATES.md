@@ -55,4 +55,4 @@ Each phase P1–P20 must keep these four invariants green after its changes. Evi
 | 16 | Client JS full rewire | 10729 | 10585 | pass | pass | 317 pass | 8a234f1 |
 | 13 | auth.controller dedupe | 10585 | 10540 | pass | pass | 317 pass | 218f9c6 |
 | 7+14 | Repos + services | 10540 | 10533 | pass | pass | 317 pass | 9a61ca1 |
-| 20 | E2E | 10533 | 10533 | pass | pass | 317 pass + 7/7 E2E | (pending) |
+| 20 | E2E | 10533 | 10533 | pass | pass | 317 pass + 7/7 E2E | 4e5a8b0 |
